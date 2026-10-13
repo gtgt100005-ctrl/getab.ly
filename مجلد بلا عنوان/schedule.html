@@ -1,0 +1,188 @@
+k<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جدول المحاضرات الشبكي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { font-family: 'Cairo', sans-serif; background-color: #0b0f19; color: #fff; margin: 0; padding: 20px; }
+  .wrap { max-width: 1200px; margin: auto; text-align: center; }
+  h1 { color: #00e5ff; margin-bottom: 5px; }
+  p.subtitle { color: #94a3b8; margin-bottom: 20px; font-size: 14px; }
+  .card { background: #131b2e; padding: 20px; border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 229, 255, 0.15); overflow-x: auto; border: 1px solid rgba(0, 229, 255, 0.2); }
+  
+  table.matrix-table { width: 100%; border-collapse: separate; border-spacing: 8px; text-align: center; }
+  table.matrix-table th, table.matrix-table td { padding: 12px; font-size: 14px; }
+  table.matrix-table th { background: rgba(0, 229, 255, 0.05); color: #00e5ff; font-weight: 700; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 10px; }
+  
+  .slot-cell {
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px solid rgba(0, 229, 255, 0.3);
+    border-radius: 12px;
+    height: 120px;
+    vertical-align: middle;
+    transition: 0.3s;
+    padding: 8px;
+  }
+  .slot-cell:hover {
+    border-color: #00e5ff;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+  }
+  
+  .has-lecture {
+    background: rgba(2, 132, 199, 0.15);
+    border: 2px solid #38bdf8;
+  }
+
+  /* تمييز المربعات بحسب الحالة */
+  .lec-confirmed {
+    border-color: #22c55e !important;
+    background: rgba(34, 197, 94, 0.15) !important;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+  }
+  .lec-cancelled {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.15) !important;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .status-confirmed { background: rgba(34, 197, 94, 0.25); color: #4ade80; border: 1px solid #22c55e; }
+  .status-cancelled { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; }
+  .status-pending { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid #eab308; }
+
+  .lec-name { font-weight: 900; color: #fff; font-size: 14px; margin-bottom: 4px; }
+  .lec-code { font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); display: inline-block; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; }
+  .lec-room, .lec-teacher { font-size: 11px; color: #cbd5e1; }
+
+  .btn { display: inline-block; padding: 10px 25px; background: #0284c7; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="yearTitle">جدول المحاضرات</h1>
+  <p class="subtitle">خطوتك الأولى: جدول الأسبوع المعتمد</p>
+  
+  <div class="card">
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th style="width: 120px;">Days</th>
+          <th>08:30 - 10:30</th>
+          <th>10:30 - 12:30</th>
+          <th>12:30 - 02:30</th>
+          <th>02:30 - 04:30</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="links">
+    <a class="btn" href="index.html">الصفحة الرئيسية</a>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
+    authDomain: "moez-125d2.firebaseapp.com",
+    projectId: "moez-125d2",
+    storageBucket: "moez-125d2.firebasestorage.app",
+    messagingSenderId: "340855843654",
+    appId: "1:340855843654:web:cc672b26682c19903e5347",
+    measurementId: "G-FNYMMC3Z6V"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const yearParam = parseInt(urlParams.get('year') || "1");
+
+  const yearNames = { 1: "السنة الأولى", 2: "السنة الثانية", 3: "السنة الثالثة", 4: "السنة الرابعة" };
+  document.getElementById('yearTitle').innerText = `جدول محاضرات ${yearNames[yearParam] || 'الدراسة'}`;
+
+  const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
+
+  function getSlotIndex(slotStr) {
+    if (!slotStr) return -1;
+    let s = slotStr.trim();
+    if (s.includes("08:30") || s.includes("8:30")) return 0;
+    if (s.includes("10:30")) return 1;
+    if (s.includes("12:30")) return 2;
+    if (s.includes("02:30") || s.includes("2:30")) return 3;
+    return -1;
+  }
+
+  // الاستماع اللحظي الفوري لأي تغيير في Firebase
+  onSnapshot(collection(db, "lectures"), (snapshot) => {
+    let grid = {};
+    days.forEach(d => { grid[d] = [null, null, null, null]; });
+
+    snapshot.forEach(doc => {
+      const item = doc.data();
+      if (Number(item.year) === yearParam) {
+        let dayKey = item.day ? item.day.trim() : "";
+        let idx = getSlotIndex(item.slot);
+        if (grid[dayKey] && idx !== -1) {
+          grid[dayKey][idx] = item;
+        }
+      }
+    });
+
+    let html = "";
+    days.forEach(day => {
+      html += `<tr><th style="font-weight: 900; color: #fff;">${day}</th>`;
+      
+      for (let i = 0; i < 4; i++) {
+        let lec = grid[day][i];
+        if (lec) {
+          let statusHTML = "";
+          let extraClass = "";
+
+          // الفحص الدقيق لخاصية status المحدثة من الأستاذ
+          if (lec.status === "مؤكدة" || lec.status === "confirmed") {
+            statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
+            extraClass = "lec-confirmed";
+          } else if (lec.status === "ملغاة" || lec.status === "cancelled") {
+            statusHTML = `<div class="status-badge status-cancelled">✕ ملغاة</div>`;
+            extraClass = "lec-cancelled";
+          } else {
+            statusHTML = `<div class="status-badge status-pending">غير محددة</div>`;
+          }
+
+          html += `
+            <td class="slot-cell has-lecture ${extraClass}">
+              ${statusHTML}
+              <div class="lec-name">${lec.name}</div>
+              <div class="lec-code">${lec.code}</div>
+              <div class="lec-room">📍 ${lec.room}</div>
+              <div class="lec-teacher">👨‍🏫 ${lec.teacher}</div>
+            </td>
+          `;
+        } else {
+          html += `<td class="slot-cell"></td>`;
+        }
+      }
+      html += `</tr>`;
+    });
+
+    document.getElementById('tableBody').innerHTML = html;
+  });
+</script>
+</body>
+</html>
