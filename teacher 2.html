@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دخول الأستاذ</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>دخول الأستاذ</h1>
+
+  <div id="login" class="card login">
+    <form id="loginForm" autocomplete="off">
+      <label for="tcodeInput">كود الأستاذ</label>
+      <input id="tcodeInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button id="go" type="submit" class="btn" style="width:100%;margin-top:12px">دخول</button>
+      <p id="err" class="err"></p>
+    </form>
+  </div>
+
+  <div id="panel" class="hide">
+    <div class="card">
+      <div class="top"><h2>موادي</h2><button id="out" type="button" class="btn red sm">خروج</button></div>
+      <div class="tw"><table>
+        <thead><tr><th>السنة</th><th>اليوم</th><th>الوقت</th><th>المادة</th><th>القاعة</th><th>الحالة</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="links"><a class="btn" href="index.html">الرئيسية</a></div>
+</div>
+
+<script type="module">
+import { watchLectures, setStatus, esc, badge } from "./app.js";
+
+const $ = id => document.getElementById(id);
+let unsub = null;
+
+$("loginForm").addEventListener("submit", e => {
+  e.preventDefault();
+  $("err").textContent = "";
+  const code = $("tcodeInput").value.trim();
+  if (!code) { $("err").textContent = "اكتب كود الأستاذ"; return; }
+
+  if (unsub) unsub();
+  $("rows").innerHTML = `<tr><td colspan="7" class="msg">جاري التحميل...</td></tr>`;
+
+  let first = true;
+  unsub = watchLectures("tcode", code, list => {
+    if (first) {
+      first = false;
+      if (!list.length) {
+        $("err").textContent = "لا توجد مواد بهذا الكود";
+        if (unsub) { unsub(); unsub = null; }
+        return;
+      }
+      $("login").classList.add("hide");
+      $("panel").classList.remove("hide");
+    }
+    render(list);
+  }, err => {
+    console.error(err);
+    $("err").textContent = "تعذر الاتصال بقاعدة البيانات";
+  });
+});
+
+$("out").addEventListener("click", () => location.reload());
+
+function render(list) {
+  if (!list.length) {
+    $("rows").innerHTML = `<tr><td colspan="7" class="msg">لا توجد مواد</td></tr>`;
+    return;
+  }
+  $("rows").innerHTML = list.map(l => `
+    <tr class="${esc(l.status || "pending")}">
+      <td>${esc(l.year)}</td>
+      <td>${esc(l.day)}</td>
+      <td>${esc(l.slot)}</td>
+      <td>${esc(l.name)}<br><small>${esc(l.code)}</small></td>
+      <td>${esc(l.room)}</td>
+      <td>${badge(l.status)}</td>
+      <td style="white-space:nowrap">
+        <button type="button" class="btn green sm" data-act="confirmed" data-id="${esc(l.id)}">تأكيد</button>
+        <button type="button" class="btn red sm" data-act="cancelled" data-id="${esc(l.id)}">إلغاء</button>
+        <button type="button" class="btn sm" data-act="pending" data-id="${esc(l.id)}">غير محددة</button>
+      </td>
+    </tr>`).join("");
+}
+
+$("rows").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  try {
+    await setStatus(b.dataset.id, b.dataset.act);
+  } catch (x) {
+    console.error(x);
+    alert("تعذر تحديث الحالة");
+  }
+});
+</script>
+</body>
+</html>
