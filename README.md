@@ -1,5 +1,0 @@
-[admin.html](https://github.com/user-attachments/files/33440686/admin.html)
-[app.js](https://github.com/user-attachments/files/33440688/app.js)[teacher.html](https://github.com/user-attachments/files/33440692/teacher.html)
-[style.css](https://github.com/user-attachments/files/33440691/style.css)
-[schedule.html](https://github.com/user-attachments/files/33440690/schedule.html)
-[index.html](https://github.com/user-attachments/files/33440689/index.html)
