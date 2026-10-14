@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الكنترول</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>لوحة الكنترول</h1>
+
+  <div id="login" class="card login">
+    <form id="loginForm" autocomplete="on">
+      <label for="pw">كلمة السر</label>
+      <input id="pw" name="password" type="password" autocomplete="current-password">
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+        <input id="showPw" type="checkbox" style="width:auto;margin:0"> إظهار كلمة السر
+      </label>
+      <button id="go" type="submit" class="btn" style="width:100%;margin-top:12px">دخول</button>
+      <p id="err" class="err"></p>
+    </form>
+  </div>
+
+  <div id="panel" class="hide">
+
+    <div class="card">
+      <h2>إدارة اللافتة الإعلانية (الصفحة الرئيسية)</h2>
+      <label for="bannerText">نص اللافتة أو التنبيه</label>
+      <textarea id="bannerText" rows="3" placeholder="اكتب نص الإعلان هنا..." style="width:100%;padding:10px;background:#0b1024;color:#fff;border:1px solid var(--line);border-radius:10px;font-family:'Cairo',sans-serif;margin-bottom:12px"></textarea>
+      <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
+    </div>
+
+    <div class="card">
+      <div class="top"><h2>إضافة مادة</h2><button id="out" type="button" class="btn red sm">خروج</button></div>
+      <form id="add" class="form">
+        <div><label for="name">اسم المادة</label><input id="name" required></div>
+        <div><label for="code">كود المادة</label><input id="code" required></div>
+        <div><label for="year">السنة الدراسية</label><select id="year"></select></div>
+        <div><label for="day">اليوم</label><select id="day"></select></div>
+        <div><label for="slot">الفترة الزمنية</label><input id="slot" placeholder="08:00 - 10:00" required></div>
+        <div><label for="room">القاعة</label><input id="room" required></div>
+        <div><label for="teacher">اسم الأستاذ</label><input id="teacher" required></div>
+        <div><label for="tcode">كود الأستاذ</label><input id="tcode" required></div>
+        <div style="grid-column:1/-1"><button type="submit" class="btn green" style="width:100%">إضافة</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>المواد المضافة</h2>
+      <div class="tw"><table>
+        <thead><tr><th>السنة</th><th>اليوم</th><th>الوقت</th><th>المادة</th><th>الأستاذ</th><th>كود الأستاذ</th><th>الحالة</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card">
+      <h2>تغيير كلمة السر</h2>
+      <form id="pwf" class="form">
+        <div><label for="old">الحالية</label><input id="old" type="password" required></div>
+        <div><label for="new1">الجديدة (6 أحرف على الأقل)</label><input id="new1" type="password" minlength="6" required></div>
+        <div><label for="new2">تأكيد الجديدة</label><input id="new2" type="password" minlength="6" required></div>
+        <div style="grid-column:1/-1"><button type="submit" class="btn" style="width:100%">تغيير</button></div>
+      </form>
+    </div>
+  </div>
+
+  <div class="links"><a class="btn" href="index.html">الرئيسية</a></div>
+</div>
+
+<script type="module">
+import { db, DAYS, YEARS, watchLectures, addLecture, deleteLecture, setStatus, checkAdmin, changeAdmin, esc, badge } from "./app.js";
+import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+let watching = false;
+
+$("year").innerHTML = YEARS.map(y => `<option>${esc(y)}</option>`).join("");
+$("day").innerHTML = DAYS.map(d => `<option>${esc(d)}</option>`).join("");
+
+$("showPw").addEventListener("change", e => {
+  $("pw").type = e.target.checked ? "text" : "password";
+});
+
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("err").textContent = "";
+  const pw = $("pw").value;
+  if (!pw) { $("err").textContent = "اكتب كلمة السر"; return; }
+  $("go").disabled = true;
+  try {
+    if (await checkAdmin(pw)) {
+      $("login").classList.add("hide");
+      $("panel").classList.remove("hide");
+      startPanel();
+    } else {
+      $("err").textContent = "كلمة السر غير صحيحة";
+    }
+  } catch (x) {
+    console.error(x);
+    $("err").textContent = "تعذر الاتصال بقاعدة البيانات";
+  } finally {
+    $("go").disabled = false;
+  }
+});
+
+$("out").addEventListener("click", () => location.reload());
+
+function startPanel() {
+  loadBanner();
+  if (watching) return;
+  watching = true;
+  watchLectures(null, null, renderRows, err => {
+    console.error(err);
+    $("rows").innerHTML = `<tr><td colspan="8" class="msg">تعذر تحميل المواد</td></tr>`;
+  });
+}
+
+async function loadBanner() {
+  try {
+    const s = await getDoc(doc(db, "settings", "banner"));
+    if (s.exists()) $("bannerText").value = s.data().text || "";
+  } catch (e) { console.error(e); }
+}
+
+$("saveBannerBtn").addEventListener("click", async () => {
+  try {
+    await setDoc(doc(db, "settings", "banner"), { text: $("bannerText").value.trim() });
+    alert("تم نشر اللافتة الإعلانية بنجاح!");
+  } catch (x) {
+    console.error(x);
+    alert("تعذر حفظ اللافتة");
+  }
+});
+
+function renderRows(list) {
+  if (!list.length) {
+    $("rows").innerHTML = `<tr><td colspan="8" class="msg">لا توجد مواد</td></tr>`;
+    return;
+  }
+  $("rows").innerHTML = list.map(l => `
+    <tr class="${esc(l.status || "pending")}">
+      <td>${esc(l.year)}</td>
+      <td>${esc(l.day)}</td>
+      <td>${esc(l.slot)}</td>
+      <td>${esc(l.name)}<br><small>${esc(l.code)} - ${esc(l.room)}</small></td>
+      <td>${esc(l.teacher)}</td>
+      <td>${esc(l.tcode)}</td>
+      <td>${badge(l.status)}</td>
+      <td style="white-space:nowrap">
+        <button type="button" class="btn green sm" data-act="confirmed" data-id="${esc(l.id)}">تأكيد</button>
+        <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">إلغاء</button>
+        <button type="button" class="btn red sm" data-act="delete" data-id="${esc(l.id)}">حذف</button>
+      </td>
+    </tr>`).join("");
+}
+
+$("rows").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const { act, id } = b.dataset;
+  try {
+    if (act === "delete") {
+      if (confirm("حذف هذه المادة؟")) await deleteLecture(id);
+    } else {
+      await setStatus(id, act);
+    }
+  } catch (x) {
+    console.error(x);
+    alert("تعذر تنفيذ العملية");
+  }
+});
+
+$("add").addEventListener("submit", async e => {
+  e.preventDefault();
+  try {
+    await addLecture({
+      name: $("name").value.trim(),
+      code: $("code").value.trim(),
+      year: $("year").value,
+      day: $("day").value,
+      slot: $("slot").value.trim(),
+      room: $("room").value.trim(),
+      teacher: $("teacher").value.trim(),
+      tcode: $("tcode").value.trim(),
+      status: "pending"
+    });
+    e.target.reset();
+  } catch (x) {
+    console.error(x);
+    alert("تعذرت إضافة المادة");
+  }
+});
+
+$("pwf").addEventListener("submit", async e => {
+  e.preventDefault();
+  if ($("new1").value !== $("new2").value) { alert("كلمتا السر الجديدتان غير متطابقتين"); return; }
+  try {
+    if (await changeAdmin($("old").value, $("new1").value)) {
+      alert("تم تغيير كلمة السر");
+      e.target.reset();
+    } else {
+      alert("كلمة السر الحالية غير صحيحة");
+    }
+  } catch (x) {
+    console.error(x);
+    alert("تعذر تغيير كلمة السر");
+  }
+});
+</script>
+</body>
+</html>
