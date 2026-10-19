@@ -33,7 +33,7 @@
       <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
     </div>
 
-    <!-- قسم إدارة روابط مجموعات الواتساب للسنوات -->
+    <!-- قسم إدارة روابط مجموعات الواتساب للسنوات (مع إمكانية العرض والحذف) -->
     <div class="card">
       <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> إدارة روابط مجموعات الواتساب للسنوات</h2>
       <form id="saveGroupForm" class="form">
@@ -51,9 +51,19 @@
           <input id="groupUrl" placeholder="https://chat.whatsapp.com/..." required dir="ltr">
         </div>
         <div style="grid-column:1/-1">
-          <button type="submit" class="btn green" style="width:100%">حفظ ونشر رابط المجموعة</button>
+          <button type="submit" class="btn green" style="width:100%">حفظ وتحديث رابط المجموعة</button>
         </div>
       </form>
+
+      <!-- جدول عرض وحذف المجموعات المضافة -->
+      <div style="margin-top:20px;" class="tw">
+        <table>
+          <thead><tr><th>السنة الدراسية</th><th>رابط المجموعة</th><th>إجراء</th></tr></thead>
+          <tbody id="adminGroupsList">
+            <tr><td colspan="3" class="msg">جاري تحميل الروابط...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- قسم إدارة تواصل الأساتذة -->
@@ -184,6 +194,7 @@ if (saveGroupForm) {
 
     try {
       await setDoc(doc(db, "groups", `year_${yearVal}`), {
+        year: yearVal,
         url: urlVal,
         updatedAt: new Date()
       });
@@ -195,6 +206,42 @@ if (saveGroupForm) {
     }
   });
 }
+
+// عرض روابط مجموعات السنوات في جدول لوحة الكنترول مع خيار الحذف
+onSnapshot(collection(db, "groups"), (snapshot) => {
+  const container = document.getElementById("adminGroupsList");
+  if (!container) return;
+  if (snapshot.empty) {
+    container.innerHTML = `<tr><td colspan="3" class="msg">لا توجد مجموعات مضافة حالياً</td></tr>`;
+    return;
+  }
+  container.innerHTML = "";
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const yearNum = docSnap.id.replace("year_", "");
+    const yearNames = { "1": "السنة الأولى", "2": "السنة الثانية", "3": "السنة الثالثة", "4": "السنة الرابعة" };
+    
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${yearNames[yearNum] || "السنة " + yearNum}</td>
+      <td dir="ltr" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(data.url)}</td>
+      <td><button type="button" class="btn red sm" onclick="deleteGroup('${docSnap.id}')">حذف</button></td>
+    `;
+    container.appendChild(tr);
+  });
+});
+
+window.deleteGroup = async (id) => {
+  if (confirm("هل أنت متأكد من حذف رابط هذه المجموعة؟")) {
+    try {
+      await deleteDoc(doc(db, "groups", id));
+      alert("✔ تم حذف الرابط بنجاح");
+    } catch (e) {
+      console.error(e);
+      alert("تعذر الحذف");
+    }
+  }
+};
 
 function renderRows(list) {
   if (!list.length) {
@@ -212,7 +259,7 @@ function renderRows(list) {
       <td>${badge(l.status)}</td>
       <td style="white-space:nowrap">
         <button type="button" class="btn green sm" data-act="confirmed" data-id="${esc(l.id)}">تأكيد</button>
-        <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">إلغاء</button>
+        <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">لغاء</button>
         <button type="button" class="btn red sm" data-act="delete" data-id="${esc(l.id)}">حذف</button>
       </td>
     </tr>`).join("");
@@ -279,7 +326,7 @@ if (addTeacherForm) {
   addTeacherForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = document.getElementById("profName").value.trim();
-    const username = document.getElementById("profUsername").value.trim().replace("@", "");
+    const username = document.getElementById("profUsername").value.trim().replace("@", "",);
 
     try {
       await addDoc(teachersColRef, {
