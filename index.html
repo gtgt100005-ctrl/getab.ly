@@ -27,14 +27,24 @@
       <a class="btn big" href="schedule.html?year=4">السنة الرابعة</a>
     </div>
 
-    <!-- دليل تواصل الأساتذة المنسق بالأيقونات واللون الداكن -->
-    <div style="margin-top: 25px; padding: 18px; background: rgba(11, 16, 36, 0.6); border: 1px solid var(--line); border-radius: 12px; text-align: center;">
-      <h3 style="color: #4deeea; font-size: 1.1rem; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <i class="fab fa-whatsapp" style="color: #25d366; font-size: 1.4rem;"></i> دليل تواصل الأساتذة (واتساب)
-      </h3>
-      <div id="publicTeachersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 15px;">
-        <p style="color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1;">جاري تحميل البيانات...</p>
+    <!-- دليل تواصل الأساتذة (قابل للفتح والإغلاق بضغطة زر) -->
+    <div style="margin-top: 25px; border: 1px solid var(--line); border-radius: 12px; background: rgba(11, 16, 36, 0.6); overflow: hidden;">
+      
+      <!-- شريط العنوان القابل للضغط -->
+      <button id="toggleTeachersBtn" type="button" style="width: 100%; padding: 15px 20px; background: rgba(255, 255, 255, 0.05); border: none; color: #4deeea; font-size: 1.05rem; font-family: 'Cairo', sans-serif; font-weight: bold; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: background 0.3s;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <i class="fab fa-whatsapp" style="color: #25d366; font-size: 1.3rem;"></i> دليل تواصل الأساتذة (واتساب)
+        </span>
+        <i id="toggleArrow" class="fas fa-chevron-down" style="transition: transform 0.3s; color: #a0aec0;"></i>
+      </button>
+
+      <!-- محتوى القائمة (مخفي افتراضياً) -->
+      <div id="teachersContent" style="display: none; padding: 18px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+        <div id="publicTeachersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+          <p style="color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1; text-align: center;">جاري تحميل البيانات...</p>
+        </div>
       </div>
+
     </div>
 
   </div>
@@ -59,6 +69,17 @@
     measurementId: "G-FNYMMC3Z6V"
   }));
 
+  // كود التفاعل: فتح وإغلاق قائمة الأساتذة عند الضغط
+  const toggleBtn = document.getElementById("toggleTeachersBtn");
+  const teachersContent = document.getElementById("teachersContent");
+  const toggleArrow = document.getElementById("toggleArrow");
+
+  toggleBtn.addEventListener("click", () => {
+    const isHidden = teachersContent.style.display === "none";
+    teachersContent.style.display = isHidden ? "block" : "none";
+    toggleArrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+  });
+
   // الاستماع اللحظي للكتلة العارضة
   onSnapshot(doc(db, "settings", "banner"), (docSnap) => {
     if (docSnap.exists() && docSnap.data().text) {
@@ -78,7 +99,7 @@
     container.innerHTML = "";
     
     if (snapshot.empty) {
-      container.innerHTML = "<p style='color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1;'>لا توجد بيانات مضافة للأساتذة حالياً.</p>";
+      container.innerHTML = "<p style='color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1; text-align: center;'>لا توجد بيانات مضافة للأساتذة حالياً.</p>";
       return;
     }
 
