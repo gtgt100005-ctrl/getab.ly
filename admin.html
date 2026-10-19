@@ -208,6 +208,51 @@ $("pwf").addEventListener("submit", async e => {
     alert("تعذر تغيير كلمة السر");
   }
 });
+// إدارة تواصل الأساتذة في فايربيس
+const teachersColRef = collection(db, "teachers");
+
+const addTeacherForm = document.getElementById("addTeacherForm");
+if (addTeacherForm) {
+  addTeacherForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("profName").value.trim();
+    const username = document.getElementById("profUsername").value.trim().replace("@", "");
+
+    try {
+      await addDoc(teachersColRef, {
+        name: name,
+        username: username,
+        createdAt: new Date()
+      });
+      alert("✔ تم حفظ بيانات الأستاذ بنجاح!");
+      addTeacherForm.reset();
+    } catch (error) {
+      console.error("خطأ في حفظ البيانات:", error);
+    }
+  });
+}
+
+onSnapshot(teachersColRef, (snapshot) => {
+  const container = document.getElementById("adminTeachersList");
+  if (!container) return;
+  container.innerHTML = "";
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    const item = document.createElement("div");
+    item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px;";
+    item.innerHTML = `
+      <span><strong>${data.name}</strong> (@${data.username})</span>
+      <button onclick="deleteTeacher('${docSnap.id}')" style="background: #dc3545; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">حذف</button>
+    `;
+    container.appendChild(item);
+  });
+});
+
+window.deleteTeacher = async (id) => {
+  if (confirm("هل أنت متأكد من حذف هذا الأستاذ؟")) {
+    await deleteDoc(doc(db, "teachers", id));
+  }
+};
 </script>
 </body>
 </html>
