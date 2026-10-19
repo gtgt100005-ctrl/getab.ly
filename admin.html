@@ -33,7 +33,30 @@
       <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
     </div>
 
-    <!-- قسم إدارة تواصل الأساتذة المحدث بالأيقونات -->
+    <!-- قسم إدارة روابط مجموعات الواتساب للسنوات -->
+    <div class="card">
+      <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> إدارة روابط مجموعات الواتساب للسنوات</h2>
+      <form id="saveGroupForm" class="form">
+        <div>
+          <label for="groupYear">اختر السنة الدراسية</label>
+          <select id="groupYear">
+            <option value="1">السنة الأولى</option>
+            <option value="2">السنة الثانية</option>
+            <option value="3">السنة الثالثة</option>
+            <option value="4">السنة الرابعة</option>
+          </select>
+        </div>
+        <div>
+          <label for="groupUrl">رابط مجموعة الواتساب</label>
+          <input id="groupUrl" placeholder="https://chat.whatsapp.com/..." required dir="ltr">
+        </div>
+        <div style="grid-column:1/-1">
+          <button type="submit" class="btn green" style="width:100%">حفظ ونشر رابط المجموعة</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- قسم إدارة تواصل الأساتذة -->
     <div class="card">
       <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> إدارة تواصل الأساتذة (WhatsApp)</h2>
       <form id="addTeacherForm" class="form">
@@ -150,6 +173,28 @@ $("saveBannerBtn").addEventListener("click", async () => {
     alert("تعذر حفظ اللافتة");
   }
 });
+
+// حفظ رابط مجموعة الواتساب للسنة
+const saveGroupForm = document.getElementById("saveGroupForm");
+if (saveGroupForm) {
+  saveGroupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const yearVal = document.getElementById("groupYear").value;
+    const urlVal = document.getElementById("groupUrl").value.trim();
+
+    try {
+      await setDoc(doc(db, "groups", `year_${yearVal}`), {
+        url: urlVal,
+        updatedAt: new Date()
+      });
+      alert(`✔ تم حفظ وتحديث رابط مجموعة السنة ${yearVal} بنجاح!`);
+      saveGroupForm.reset();
+    } catch (error) {
+      console.error(error);
+      alert("تعذر حفظ الرابط");
+    }
+  });
+}
 
 function renderRows(list) {
   if (!list.length) {
