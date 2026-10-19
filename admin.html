@@ -32,6 +32,22 @@
       <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
     </div>
 
+    <!-- إدارة تواصل الأساتذة (واتساب) - بتصميم متناسق مع الموقع -->
+    <div class="card">
+      <h2>إدارة تواصل الأساتذة (WhatsApp)</h2>
+      <form id="addTeacherForm" class="form">
+        <div><label for="profName">اسم الأستاذ</label><input id="profName" required></div>
+        <div><label for="profUsername">رقم الواتساب أو اليوزر (مثال: 218911234567)</label><input id="profUsername" required dir="ltr"></div>
+        <div style="grid-column:1/-1"><button type="submit" class="btn green" style="width:100%">حفظ الأستاذ</button></div>
+      </form>
+      <div style="margin-top:15px;" class="tw">
+        <table>
+          <thead><tr><th>اسم الأستاذ</th><th>رقم / يوزر واتساب</th><th>حذف</th></tr></thead>
+          <tbody id="adminTeachersList"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="card">
       <div class="top"><h2>إضافة مادة</h2><button id="out" type="button" class="btn red sm">خروج</button></div>
       <form id="add" class="form">
@@ -71,7 +87,7 @@
 
 <script type="module">
 import { db, DAYS, YEARS, watchLectures, addLecture, deleteLecture, setStatus, checkAdmin, changeAdmin, esc, badge } from "./app.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, setDoc, getDoc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = id => document.getElementById(id);
 let watching = false;
@@ -208,6 +224,7 @@ $("pwf").addEventListener("submit", async e => {
     alert("تعذر تغيير كلمة السر");
   }
 });
+
 // إدارة تواصل الأساتذة في فايربيس
 const teachersColRef = collection(db, "teachers");
 
@@ -228,6 +245,7 @@ if (addTeacherForm) {
       addTeacherForm.reset();
     } catch (error) {
       console.error("خطأ في حفظ البيانات:", error);
+      alert("تعذر حفظ بيانات الأستاذ");
     }
   });
 }
@@ -235,22 +253,31 @@ if (addTeacherForm) {
 onSnapshot(teachersColRef, (snapshot) => {
   const container = document.getElementById("adminTeachersList");
   if (!container) return;
+  if (snapshot.empty) {
+    container.innerHTML = `<tr><td colspan="3" class="msg">لا توجد أساتذة مضافون حالياً</td></tr>`;
+    return;
+  }
   container.innerHTML = "";
   snapshot.forEach((docSnap) => {
     const data = docSnap.data();
-    const item = document.createElement("div");
-    item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px;";
-    item.innerHTML = `
-      <span><strong>${data.name}</strong> (@${data.username})</span>
-      <button onclick="deleteTeacher('${docSnap.id}')" style="background: #dc3545; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer;">حذف</button>
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${esc(data.name)}</td>
+      <td dir="ltr">@${esc(data.username)}</td>
+      <td><button type="button" class="btn red sm" onclick="deleteTeacher('${docSnap.id}')">حذف</button></td>
     `;
-    container.appendChild(item);
+    container.appendChild(tr);
   });
 });
 
 window.deleteTeacher = async (id) => {
   if (confirm("هل أنت متأكد من حذف هذا الأستاذ؟")) {
-    await deleteDoc(doc(db, "teachers", id));
+    try {
+      await deleteDoc(doc(db, "teachers", id));
+    } catch (e) {
+      console.error(e);
+      alert("تعذر الحذف");
+    }
   }
 };
 </script>
