@@ -1,10 +1,11 @@
-k<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>جدول المحاضرات الشبكي</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 <style>
   body { font-family: 'Cairo', sans-serif; background-color: #0b0f19; color: #fff; margin: 0; padding: 20px; }
@@ -72,6 +73,17 @@ k<!DOCTYPE html>
   <h1 id="yearTitle">جدول المحاضرات</h1>
   <p class="subtitle">خطوتك الأولى: جدول الأسبوع المعتمد</p>
   
+  <!-- كارت مجموعـة الواتساب الخاصة بالسنة (ديناميكي من الفايربيس) -->
+  <div id="groupCard" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(37, 211, 102, 0.1); border: 1px solid #25d366; border-radius: 12px; text-align: center;">
+    <h3 style="color: #25d366; font-size: 1rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <i class="fab fa-whatsapp" style="font-size: 1.3rem;"></i> مجموعة الواتساب الخاصة بهذه السنة
+    </h3>
+    <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">انضم إلى المجموعة الرسمية للتواصل والتنسيق مع زملائك</p>
+    <a id="groupLink" href="#" target="_blank" style="background: #25d366; color: #fff; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; padding: 8px 18px; text-decoration: none; border-radius: 8px; font-size: 0.9rem;">
+      <i class="fab fa-whatsapp"></i> الانضمام لجروب السنة
+    </a>
+  </div>
+
   <div class="card">
     <table class="matrix-table">
       <thead>
@@ -95,7 +107,7 @@ k<!DOCTYPE html>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
@@ -116,6 +128,16 @@ k<!DOCTYPE html>
   const yearNames = { 1: "السنة الأولى", 2: "السنة الثانية", 3: "السنة الثالثة", 4: "السنة الرابعة" };
   document.getElementById('yearTitle').innerText = `جدول محاضرات ${yearNames[yearParam] || 'الدراسة'}`;
 
+  // جلب رابط جروب الواتساب الخاص بالسنة من الفايربيس تلقائياً
+  onSnapshot(doc(db, "groups", `year_${yearParam}`), (docSnap) => {
+    if (docSnap.exists() && docSnap.data().url) {
+      document.getElementById('groupLink').href = docSnap.data().url;
+      document.getElementById('groupCard').style.display = "block";
+    } else {
+      document.getElementById('groupCard').style.display = "none";
+    }
+  });
+
   const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
 
   function getSlotIndex(slotStr) {
@@ -133,8 +155,8 @@ k<!DOCTYPE html>
     let grid = {};
     days.forEach(d => { grid[d] = [null, null, null, null]; });
 
-    snapshot.forEach(doc => {
-      const item = doc.data();
+    snapshot.forEach(docSnap => {
+      const item = docSnap.data();
       if (Number(item.year) === yearParam) {
         let dayKey = item.day ? item.day.trim() : "";
         let idx = getSlotIndex(item.slot);
