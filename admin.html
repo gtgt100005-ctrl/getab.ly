@@ -33,7 +33,7 @@
       <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
     </div>
 
-    <!-- قسم إدارة روابط مجموعات الواتساب للسنوات (مع إمكانية العرض والحذف) -->
+    <!-- قسم إدارة روابط مجموعات الواتساب للسنوات -->
     <div class="card">
       <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> إدارة روابط مجموعات الواتساب للسنوات</h2>
       <form id="saveGroupForm" class="form">
@@ -225,23 +225,27 @@ onSnapshot(collection(db, "groups"), (snapshot) => {
     tr.innerHTML = `
       <td>${yearNames[yearNum] || "السنة " + yearNum}</td>
       <td dir="ltr" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(data.url)}</td>
-      <td><button type="button" class="btn red sm" onclick="deleteGroup('${docSnap.id}')">حذف</button></td>
+      <td><button type="button" class="btn red sm" data-del-group="${docSnap.id}">حذف</button></td>
     `;
     container.appendChild(tr);
   });
 });
 
-window.deleteGroup = async (id) => {
+// الاستماع لضغطات الحذف الخاصة بالمجموعات
+document.getElementById("adminGroupsList").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-del-group]");
+  if (!btn) return;
+  const groupId = btn.dataset.delGroup;
   if (confirm("هل أنت متأكد من حذف رابط هذه المجموعة؟")) {
     try {
-      await deleteDoc(doc(db, "groups", id));
-      alert("✔ تم حذف الرابط بنجاح");
-    } catch (e) {
-      console.error(e);
-      alert("تعذر الحذف");
+      await deleteDoc(doc(db, "groups", groupId));
+      alert("✔ تم حذف الرابط التجريبي بنجاح!");
+    } catch (err) {
+      console.error(err);
+      alert("تعذر حذف الرابط");
     }
   }
-};
+});
 
 function renderRows(list) {
   if (!list.length) {
@@ -259,7 +263,7 @@ function renderRows(list) {
       <td>${badge(l.status)}</td>
       <td style="white-space:nowrap">
         <button type="button" class="btn green sm" data-act="confirmed" data-id="${esc(l.id)}">تأكيد</button>
-        <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">لغاء</button>
+        <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">إلغاء</button>
         <button type="button" class="btn red sm" data-act="delete" data-id="${esc(l.id)}">حذف</button>
       </td>
     </tr>`).join("");
@@ -326,7 +330,7 @@ if (addTeacherForm) {
   addTeacherForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = document.getElementById("profName").value.trim();
-    const username = document.getElementById("profUsername").value.trim().replace("@", "",);
+    const username = document.getElementById("profUsername").value.trim().replace("@", "");
 
     try {
       await addDoc(teachersColRef, {
@@ -357,22 +361,24 @@ onSnapshot(teachersColRef, (snapshot) => {
     tr.innerHTML = `
       <td>${esc(data.name)}</td>
       <td dir="ltr">+${esc(data.username)}</td>
-      <td><button type="button" class="btn red sm" onclick="deleteTeacher('${docSnap.id}')">حذف</button></td>
+      <td><button type="button" class="btn red sm" data-del-teacher="${docSnap.id}">حذف</button></td>
     `;
     container.appendChild(tr);
   });
 });
 
-window.deleteTeacher = async (id) => {
+document.getElementById("adminTeachersList").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-del-teacher]");
+  if (!btn) return;
+  const teacherId = btn.dataset.delTeacher;
   if (confirm("هل أنت متأكد من حذف هذا الأستاذ؟")) {
     try {
-      await deleteDoc(doc(db, "teachers", id));
-    } catch (e) {
-      console.error(e);
-      alert("تعذر الحذف");
+      await deleteDoc(doc(db, "teachers", teacherId));
+    } catch (err) {
+      console.error(err);
     }
   }
-};
+});
 </script>
 </body>
 </html>
