@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>جداول المحاضرات الدراسية</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,14 +26,17 @@
       <a class="btn big" href="schedule.html?year=3">السنة الثالثة</a>
       <a class="btn big" href="schedule.html?year=4">السنة الرابعة</a>
     </div>
-  </div>
 
-  <!-- دليل تواصل الأساتذة (واتساب) - متناسق مع التصميم الداكن -->
-  <div style="margin-top: 25px; padding: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; text-align: center;">
-    <h3 style="color: #4deeea; font-size: 1.1rem; margin-bottom: 15px;">💬 دليل تواصل الأساتذة (واتساب)</h3>
-    <div id="publicTeachersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 15px;">
-      <p style="color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1;">جاري تحميل الأساتذة...</p>
+    <!-- دليل تواصل الأساتذة المنسق بالأيقونات واللون الداكن -->
+    <div style="margin-top: 25px; padding: 18px; background: rgba(11, 16, 36, 0.6); border: 1px solid var(--line); border-radius: 12px; text-align: center;">
+      <h3 style="color: #4deeea; font-size: 1.1rem; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i class="fab fa-whatsapp" style="color: #25d366; font-size: 1.4rem;"></i> دليل تواصل الأساتذة (واتساب)
+      </h3>
+      <div id="publicTeachersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 15px;">
+        <p style="color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1;">جاري تحميل البيانات...</p>
+      </div>
     </div>
+
   </div>
 
   <div class="links">
@@ -55,7 +59,7 @@
     measurementId: "G-FNYMMC3Z6V"
   }));
 
-  // الاستماع اللحظي للكتلة العارضة فقط
+  // الاستماع اللحظي للكتلة العارضة
   onSnapshot(doc(db, "settings", "banner"), (docSnap) => {
     if (docSnap.exists() && docSnap.data().text) {
       const banner = document.getElementById('announcementBanner');
@@ -66,7 +70,7 @@
     }
   });
 
-  // جلب وعرض الأساتذة في الواجهة الرئيسية للطلاب
+  // جلب وعرض الأساتذة في الواجهة الرئيسية
   const publicTeachersRef = collection(db, "teachers");
   onSnapshot(publicTeachersRef, (snapshot) => {
     const container = document.getElementById("publicTeachersList");
@@ -81,14 +85,14 @@
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const card = document.createElement("div");
-      card.style.cssText = "background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; text-align: right;";
+      card.style.cssText = "background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; text-align: right;";
       card.innerHTML = `
         <div>
           <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 0.95rem;">${data.name}</h4>
-          <span style="color: #a0aec0; font-size: 0.8rem;" dir="ltr">@${data.username}</span>
+          <span style="color: #a0aec0; font-size: 0.8rem;" dir="ltr">+${data.username}</span>
         </div>
-        <a href="https://wa.me/${data.username}" target="_blank" style="background: #25d366; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; font-weight: bold; white-space: nowrap;">
-          مراسلة
+        <a href="https://wa.me/${data.username}" target="_blank" style="background: #25d366; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; font-weight: bold; white-space: nowrap;">
+          <i class="fab fa-whatsapp"></i> مراسلة
         </a>
       `;
       container.appendChild(card);
