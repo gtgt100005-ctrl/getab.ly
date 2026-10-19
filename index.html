@@ -1,11 +1,49 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>جداول المحاضرات الدراسية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
 <!-- مكان عرض اللافتة الإعلانية (قراءة فقط) -->
 <div id="announcementBanner" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; padding: 12px 20px; border-radius: 10px; font-weight: bold; text-align: center; margin: 15px auto; max-width: 900px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
   🚨 <span id="bannerContent"></span>
 </div>
 
+<div class="wrap">
+  <h1>جداول المحاضرات الدراسية</h1>
+  
+  <div class="card">
+    <h2>اختر سنتك الدراسية</h2>
+    <div class="grid">
+      <a class="btn big" href="schedule.html?year=1">السنة الأولى</a>
+      <a class="btn big" href="schedule.html?year=2">السنة الثانية</a>
+      <a class="btn big" href="schedule.html?year=3">السنة الثالثة</a>
+      <a class="btn big" href="schedule.html?year=4">السنة الرابعة</a>
+    </div>
+  </div>
+
+  <!-- دليل تواصل الأساتذة (واتساب) - متناسق مع التصميم الداكن -->
+  <div style="margin-top: 25px; padding: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; text-align: center;">
+    <h3 style="color: #4deeea; font-size: 1.1rem; margin-bottom: 15px;">💬 دليل تواصل الأساتذة (واتساب)</h3>
+    <div id="publicTeachersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 15px;">
+      <p style="color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1;">جاري تحميل الأساتذة...</p>
+    </div>
+  </div>
+
+  <div class="links">
+    <a class="btn green" href="teacher.html">دخول الأستاذ</a>
+    <a class="btn red" href="admin.html">لوحة الكنترول</a>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   
   const db = getFirestore(initializeApp({
     apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
@@ -25,67 +63,37 @@
       banner.style.display = "block";
     } else {
       document.getElementById('announcementBanner').style.display = "none";
-  // جلب وعرض الأساتذة في الواجهة الرئيسية للطلاب
-const publicTeachersRef = collection(db, "teachers");
-onSnapshot(publicTeachersRef, (snapshot) => {
-  const container = document.getElementById("publicTeachersList");
-  if (!container) return;
-  container.innerHTML = "";
-  
-  if (snapshot.empty) {
-    container.innerHTML = "<p style='color: #666; grid-column: 1/-1;'>لا توجد بيانات مضافة للأساتذة حالياً.</p>";
-    return;
-  }
-
-  snapshot.forEach((docSnap) => {
-    const data = docSnap.data();
-    const card = document.createElement("div");
-    card.style.cssText = "background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center;";
-    card.innerHTML = `
-      <div>
-        <h4 style="margin: 0 0 5px 0; color: #333;">${data.name}</h4>
-        <span style="color: #666; font-size: 0.9em;" dir="ltr">@${data.username}</span>
-      </div>
-      <a href="https://wa.me/${data.username}" target="_blank" style="background: #25d366; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9em; display: flex; align-items: center; gap: 5px; font-weight: bold;">
-        مراسلة
-      </a>
-    `;
-    container.appendChild(card);
-  });
-});
     }
   });
-</script><!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>جداول المحاضرات</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="wrap">
-  <h1>جداول المحاضرات الدراسية</h1>
-  <div class="card">
-    <h2>اختر سنتك الدراسية</h2>
-    <div class="grid">
-      <a class="btn big" href="schedule.html?year=1">السنة الأولى</a>
-      <a class="btn big" href="schedule.html?year=2">السنة الثانية</a>
-      <a class="btn big" href="schedule.html?year=3">السنة الثالثة</a>
-      <a class="btn big" href="schedule.html?year=4">السنة الرابعة</a>
-    </div>
-  <!-- قسم تواصل الأساتذة (واتساب) للطلاب -->
-<div class="teachers-directory-section" style="background: #fff; padding: 20px; border-radius: 10px; margin-top: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); direction: rtl; text-align: right;">
-  <h3><i class="fab fa-whatsapp" style="color: #25d366;"></i> دليـل تواصل الأساتذة (واتساب)</h3>
-  <div id="publicTeachersList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
-    <!-- سيتم تحميل الأساتذة هنا تلقائياً -->
-  </div>
-</div>
-  </div>
-  <div class="links">
-    <a class="btn green" href="teacher.html">دخول الأستاذ</a>
-    <a class="btn red" href="admin.html">لوحة الكنترول</a>
-  </div>
-</div>
+
+  // جلب وعرض الأساتذة في الواجهة الرئيسية للطلاب
+  const publicTeachersRef = collection(db, "teachers");
+  onSnapshot(publicTeachersRef, (snapshot) => {
+    const container = document.getElementById("publicTeachersList");
+    if (!container) return;
+    container.innerHTML = "";
+    
+    if (snapshot.empty) {
+      container.innerHTML = "<p style='color: #a0aec0; font-size: 0.9rem; grid-column: 1/-1;'>لا توجد بيانات مضافة للأساتذة حالياً.</p>";
+      return;
+    }
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      const card = document.createElement("div");
+      card.style.cssText = "background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; text-align: right;";
+      card.innerHTML = `
+        <div>
+          <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 0.95rem;">${data.name}</h4>
+          <span style="color: #a0aec0; font-size: 0.8rem;" dir="ltr">@${data.username}</span>
+        </div>
+        <a href="https://wa.me/${data.username}" target="_blank" style="background: #25d366; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; font-weight: bold; white-space: nowrap;">
+          مراسلة
+        </a>
+      `;
+      container.appendChild(card);
+    });
+  });
+</script>
 </body>
 </html>
