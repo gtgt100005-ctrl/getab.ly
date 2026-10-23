@@ -150,16 +150,23 @@
     return -1;
   }
 
-  // الاستماع اللحظي الفوري لأي تغيير في Firebase
+  // ⭐ الاستماع اللحظي الفوري مع الفلترة الذكية المطورة لتجنب الفراغات
   onSnapshot(collection(db, "lectures"), (snapshot) => {
     let grid = {};
     days.forEach(d => { grid[d] = [null, null, null, null]; });
 
     snapshot.forEach(docSnap => {
       const item = docSnap.data();
-      if (Number(item.year) === yearParam) {
-        let dayKey = item.day ? item.day.trim() : "";
+      
+      // استخراج رقم السنة بذكاء سواء كانت نصية أو رقمية أو عبر yearNum
+      let docYearStr = String(item.year || "").trim();
+      let docYearNum = parseInt(docYearStr.replace(/\D/g, "")) || 0;
+      if (item.yearNum) docYearNum = Number(item.yearNum);
+
+      if (docYearNum === yearParam || docYearStr.includes(yearParam)) {
+        let dayKey = item.day ? item.day.trim().replace("إ", "ا") : ""; // توحيد الهمزات لضمان التطابق
         let idx = getSlotIndex(item.slot);
+        
         if (grid[dayKey] && idx !== -1) {
           grid[dayKey][idx] = item;
         }
@@ -176,7 +183,7 @@
           let statusHTML = "";
           let extraClass = "";
 
-          // الفحص الدقيق لخاصية status المحدثة من الأستاذ
+          // الفحص الدقيق لحالة المادة
           if (lec.status === "مؤكدة" || lec.status === "confirmed") {
             statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
             extraClass = "lec-confirmed";
