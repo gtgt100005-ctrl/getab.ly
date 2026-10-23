@@ -88,7 +88,7 @@
       </div>
     </div>
 
-    <!-- قسم إضافة مادة (بقي كما هو تماماً) -->
+    <!-- قسم إضافة مادة -->
     <div class="card">
       <div class="top"><h2>إضافة مادة</h2><button id="out" type="button" class="btn red sm">خروج</button></div>
       <form id="add" class="form">
@@ -104,11 +104,11 @@
       </form>
     </div>
 
-    <!-- قسم المواد المضافة (تم إعادة ترتيبه بنظام السنوات ثم الأيام الستة) -->
+    <!-- قسم المواد المضافة المعدل لتحديد السنة ثم اليوم -->
     <div class="card">
       <h2>المواد المضافة</h2>
       <div id="addedLecturesExplorer" style="margin-top: 15px;">
-        <!-- يتم عرضه تفاعلياً: السنوات -> الأيام الستة -> جدول المحاضرات -->
+        <!-- يتم تعبئة المحتوى تلقائياً -->
       </div>
     </div>
 
@@ -146,7 +146,6 @@ $("showPw").addEventListener("change", e => {
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   $("err").textContent = "";
-  const pw = $("pw".value); // corrected to $("pw").value safely
   const pwVal = $("pw").value;
   if (!pwVal) { $("err").textContent = "اكتب كلمة السر"; return; }
   $("go").disabled = true;
@@ -170,6 +169,7 @@ $("out").addEventListener("click", () => location.reload());
 
 function startPanel() {
   loadBanner();
+  renderAddedLectures();
   if (watching) return;
   watching = true;
   watchLectures(null, null, (list) => {
@@ -182,42 +182,39 @@ function startPanel() {
   });
 }
 
-// دالة عرض السنوات ثم الأيام الستة داخل قسم المواد المضافة
+// دالة عرض السنوات -> الأيام الستة -> جدول المحاضرات
 function renderAddedLectures() {
   const container = $("addedLecturesExplorer");
   if (!container) return;
 
   if (!adminYear) {
-    // الخطوة 1: عرض مربعات السنوات الأربع
     container.innerHTML = `
-      <p style="margin-bottom: 12px; color: #aaa;">اختر السنة الدراسية:</p>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+      <p style="margin-bottom: 12px; color: #aaa;">اختر السنة الدراسية لمشاهدة وإدارة موادها:</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
         ${YEARS.map(y => `
-          <button type="button" class="btn" data-adm-year="${esc(y)}" style="padding: 15px; font-weight: bold; background: #16213e; border: 1px solid var(--line);">${esc(y)}</button>
+          <button type="button" class="btn" data-adm-year="${esc(y)}" style="padding: 15px; font-weight: bold; background: #16213e; border: 1px solid var(--line); cursor: pointer;">${esc(y)}</button>
         `).join("")}
       </div>
     `;
   } else if (!adminDay) {
-    // الخطوة 2: عرض الأيام الستة في الأسبوع للسنة المحددة
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="color: var(--accent, #25d366); margin: 0;">${esc(adminYear)}</h3>
-        <button type="button" class="btn sm" id="backToAdminYears">← رجوع للسنوات</button>
+        <h3 style="color: #25d366; margin: 0;">${esc(adminYear)}</h3>
+        <button type="button" class="btn sm red" id="backToAdminYears">← رجوع للسنوات</button>
       </div>
       <p style="margin-bottom: 12px; color: #aaa;">اختر اليوم:</p>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
         ${DAYS.map(d => `
-          <button type="button" class="btn" data-adm-day="${esc(d)}" style="padding: 12px; background: #0f3460; border: 1px solid var(--line);">${esc(d)}</button>
+          <button type="button" class="btn" data-adm-day="${esc(d)}" style="padding: 12px; background: #0f3460; border: 1px solid var(--line); cursor: pointer;">${esc(d)}</button>
         `).join("")}
       </div>
     `;
   } else {
-    // الخطوة 3: عرض جدول المواد الخاص بالسنة واليوم المحدد مع أزرار التحكم
     const filtered = allLectures.filter(l => l.year === adminYear && l.day === adminDay);
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 style="color: var(--accent, #25d366); margin: 0;">${esc(adminYear)} - ${esc(adminDay)}</h3>
-        <button type="button" class="btn sm" id="backToAdminDays">← رجوع للأيام</button>
+        <h3 style="color: #25d366; margin: 0;">${esc(adminYear)} - ${esc(adminDay)}</h3>
+        <button type="button" class="btn sm red" id="backToAdminDays">← رجوع للأيام</button>
       </div>
       <div class="tw">
         <table>
@@ -225,7 +222,7 @@ function renderAddedLectures() {
             <tr><th>الوقت</th><th>المادة والكود والقاعة</th><th>الأستاذ</th><th>كود الأستاذ</th><th>الحالة</th><th>إجراء</th></tr>
           </thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="6" class="msg">لا توجد مواد مضافة في هذا اليوم</td></tr>` :
+            ${filtered.length === 0 ? `<tr><td colspan="6" class="msg">لا توجد مواد مضافة لهذا اليوم</td></tr>` :
               filtered.map(l => `
                 <tr class="${esc(l.status || "pending")}">
                   <td>${esc(l.slot)}</td>
@@ -247,7 +244,7 @@ function renderAddedLectures() {
   }
 }
 
-// التفاعل مع النقر داخل قسم المواد المضافة
+// أحداث النقر داخل قسم المواد المضافة
 $("addedLecturesExplorer").addEventListener("click", async e => {
   const yBtn = e.target.closest("button[data-adm-year]");
   if (yBtn) {
@@ -310,7 +307,7 @@ $("saveBannerBtn").addEventListener("click", async () => {
   }
 });
 
-// زر التحديث التلقائي لجدول السنة الثالثة
+// زر التحديث السريع للسنة الثالثة
 const updateYear3Btn = document.getElementById("updateYear3Btn");
 if (updateYear3Btn) {
   updateYear3Btn.addEventListener("click", async () => {
@@ -401,7 +398,7 @@ if (saveGroupForm) {
   });
 }
 
-// عرض روابط مجموعات السنوات في جدول لوحة الكنترول مع خيار الحذف
+// عرض روابط مجموعات السنوات
 onSnapshot(collection(db, "groups"), (snapshot) => {
   const container = document.getElementById("adminGroupsList");
   if (!container) return;
