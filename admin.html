@@ -97,11 +97,11 @@
       </form>
     </div>
 
-    <!-- قسم المواد المضافة (السنوات -> الأيام الستة -> جدول المحاضرات) -->
+    <!-- قسم المواد المضافة مصنف حسب السنة ثم اليوم -->
     <div class="card">
       <h2>المواد المضافة</h2>
       <div id="addedLecturesExplorer" style="margin-top: 15px;">
-        <!-- يتم تعبئة المحتوى تفاعلياً -->
+        <!-- يتم تحديثه ديناميكياً -->
       </div>
     </div>
 
@@ -175,6 +175,19 @@ function startPanel() {
   });
 }
 
+// دالة المقارنة والمرونة في تطابق النصوص للحفاظ على عرض المواد بشكل سليم
+function matchYear(docYear, targetYear) {
+  if (!docYear || !targetYear) return false;
+  const cleanDoc = String(docYear).trim();
+  const cleanTarget = String(targetYear).trim();
+  return cleanDoc === cleanTarget || cleanDoc.includes(cleanTarget) || cleanTarget.includes(cleanDoc);
+}
+
+function matchDay(docDay, targetDay) {
+  if (!docDay || !targetDay) return false;
+  return String(docDay).trim() === String(targetDay).trim();
+}
+
 // دالة عرض السنوات -> الأيام الستة -> جدول المحاضرات
 function renderAddedLectures() {
   const container = $("addedLecturesExplorer");
@@ -203,8 +216,8 @@ function renderAddedLectures() {
       </div>
     `;
   } else {
-    // تصفية المحاضرات بناءً على السنة واليوم المختارين بدقة
-    const filtered = allLectures.filter(l => l.year && l.year.trim() === adminYear.trim() && l.day && l.day.trim() === adminDay.trim());
+    // تصفية المحاضرات باستخدام دالة المطابقة والمرونة
+    const filtered = allLectures.filter(l => matchYear(l.year, adminYear) && matchDay(l.day, adminDay));
     
     container.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -217,7 +230,7 @@ function renderAddedLectures() {
             <tr><th>الوقت</th><th>المادة والكود والقاعة</th><th>الأستاذ</th><th>كود الأستاذ</th><th>الحالة</th><th>إجراء</th></tr>
           </thead>
           <tbody>
-            ${filtered.length === 0 ? `<tr><td colspan="6" class="msg">لا توجد مواد مضافة لهذا اليوم</td></tr>` :
+            ${filtered.length === 0 ? `<tr><td colspan="6" class="msg">لا توجد مواد مضافة لهذا اليوم في هذه السنة</td></tr>` :
               filtered.map(l => `
                 <tr class="${esc(l.status || "pending")}">
                   <td>${esc(l.slot)}</td>
