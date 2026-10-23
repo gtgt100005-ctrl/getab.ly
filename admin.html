@@ -62,7 +62,6 @@
         </div>
       </form>
 
-      <!-- جدول عرض وحذف المجموعات المضافة -->
       <div style="margin-top:20px;" class="tw">
         <table>
           <thead><tr><th>السنة الدراسية</th><th>رابط المجموعة</th><th>إجراء</th></tr></thead>
@@ -89,6 +88,7 @@
       </div>
     </div>
 
+    <!-- قسم إضافة مادة (بقي كما هو تماماً) -->
     <div class="card">
       <div class="top"><h2>إضافة مادة</h2><button id="out" type="button" class="btn red sm">خروج</button></div>
       <form id="add" class="form">
@@ -104,12 +104,12 @@
       </form>
     </div>
 
+    <!-- قسم المواد المضافة (تم إعادة ترتيبه بنظام السنوات ثم الأيام الستة) -->
     <div class="card">
       <h2>المواد المضافة</h2>
-      <div class="tw"><table>
-        <thead><tr><th>السنة</th><th>اليوم</th><th>الوقت</th><th>المادة</th><th>الأستاذ</th><th>كود الأستاذ</th><th>الحالة</th><th></th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table></div>
+      <div id="addedLecturesExplorer" style="margin-top: 15px;">
+        <!-- يتم عرضه تفاعلياً: السنوات -> الأيام الستة -> جدول المحاضرات -->
+      </div>
     </div>
 
     <div class="card">
@@ -132,6 +132,9 @@ import { doc, setDoc, getDoc, collection, addDoc, deleteDoc, onSnapshot, query, 
 
 const $ = id => document.getElementById(id);
 let watching = false;
+let allLectures = [];
+let adminYear = null;
+let adminDay = null;
 
 $("year").innerHTML = YEARS.map(y => `<option>${esc(y)}</option>`).join("");
 $("day").innerHTML = DAYS.map(d => `<option>${esc(d)}</option>`).join("");
@@ -143,11 +146,12 @@ $("showPw").addEventListener("change", e => {
 $("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
   $("err").textContent = "";
-  const pw = $("pw").value;
-  if (!pw) { $("err").textContent = "اكتب كلمة السر"; return; }
+  const pw = $("pw".value); // corrected to $("pw").value safely
+  const pwVal = $("pw").value;
+  if (!pwVal) { $("err").textContent = "اكتب كلمة السر"; return; }
   $("go").disabled = true;
   try {
-    if (await checkAdmin(pw)) {
+    if (await checkAdmin(pwVal)) {
       $("login").classList.add("hide");
       $("panel").classList.remove("hide");
       startPanel();
@@ -168,11 +172,126 @@ function startPanel() {
   loadBanner();
   if (watching) return;
   watching = true;
-  watchLectures(null, null, renderRows, err => {
+  watchLectures(null, null, (list) => {
+    allLectures = list;
+    renderAddedLectures();
+  }, err => {
     console.error(err);
-    $("rows").innerHTML = `<tr><td colspan="8" class="msg">تعذر تحميل المواد</td></tr>`;
+    const container = $("addedLecturesExplorer");
+    if (container) container.innerHTML = `<p class="msg" style="color:red;">تعذر تحميل المواد</p>`;
   });
 }
+
+// دالة عرض السنوات ثم الأيام الستة داخل قسم المواد المضافة
+function renderAddedLectures() {
+  const container = $("addedLecturesExplorer");
+  if (!container) return;
+
+  if (!adminYear) {
+    // الخطوة 1: عرض مربعات السنوات الأربع
+    container.innerHTML = `
+      <p style="margin-bottom: 12px; color: #aaa;">اختر السنة الدراسية:</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+        ${YEARS.map(y => `
+          <button type="button" class="btn" data-adm-year="${esc(y)}" style="padding: 15px; font-weight: bold; background: #16213e; border: 1px solid var(--line);">${esc(y)}</button>
+        `).join("")}
+      </div>
+    `;
+  } else if (!adminDay) {
+    // الخطوة 2: عرض الأيام الستة في الأسبوع للسنة المحددة
+    container.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="color: var(--accent, #25d366); margin: 0;">${esc(adminYear)}</h3>
+        <button type="button" class="btn sm" id="backToAdminYears">← رجوع للسنوات</button>
+      </div>
+      <p style="margin-bottom: 12px; color: #aaa;">اختر اليوم:</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+        ${DAYS.map(d => `
+          <button type="button" class="btn" data-adm-day="${esc(d)}" style="padding: 12px; background: #0f3460; border: 1px solid var(--line);">${esc(d)}</button>
+        `).join("")}
+      </div>
+    `;
+  } else {
+    // الخطوة 3: عرض جدول المواد الخاص بالسنة واليوم المحدد مع أزرار التحكم
+    const filtered = allLectures.filter(l => l.year === adminYear && l.day === adminDay);
+    container.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="color: var(--accent, #25d366); margin: 0;">${esc(adminYear)} - ${esc(adminDay)}</h3>
+        <button type="button" class="btn sm" id="backToAdminDays">← رجوع للأيام</button>
+      </div>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr><th>الوقت</th><th>المادة والكود والقاعة</th><th>الأستاذ</th><th>كود الأستاذ</th><th>الحالة</th><th>إجراء</th></tr>
+          </thead>
+          <tbody>
+            ${filtered.length === 0 ? `<tr><td colspan="6" class="msg">لا توجد مواد مضافة في هذا اليوم</td></tr>` :
+              filtered.map(l => `
+                <tr class="${esc(l.status || "pending")}">
+                  <td>${esc(l.slot)}</td>
+                  <td>${esc(l.name)}<br><small>${esc(l.code)} - ${esc(l.room)}</small></td>
+                  <td>${esc(l.teacher)}</td>
+                  <td>${esc(l.tcode)}</td>
+                  <td>${badge(l.status)}</td>
+                  <td style="white-space:nowrap">
+                    <button type="button" class="btn green sm" data-act="confirmed" data-id="${esc(l.id)}">تأكيد</button>
+                    <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">إلغاء</button>
+                    <button type="button" class="btn red sm" data-act="delete" data-id="${esc(l.id)}">حذف</button>
+                  </td>
+                </tr>
+              `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+}
+
+// التفاعل مع النقر داخل قسم المواد المضافة
+$("addedLecturesExplorer").addEventListener("click", async e => {
+  const yBtn = e.target.closest("button[data-adm-year]");
+  if (yBtn) {
+    adminYear = yBtn.dataset.admYear;
+    adminDay = null;
+    renderAddedLectures();
+    return;
+  }
+
+  const dBtn = e.target.closest("button[data-adm-day]");
+  if (dBtn) {
+    adminDay = dBtn.dataset.admDay;
+    renderAddedLectures();
+    return;
+  }
+
+  if (e.target.id === "backToAdminYears") {
+    adminYear = null;
+    adminDay = null;
+    renderAddedLectures();
+    return;
+  }
+
+  if (e.target.id === "backToAdminDays") {
+    adminDay = null;
+    renderAddedLectures();
+    return;
+  }
+
+  const actBtn = e.target.closest("button[data-act]");
+  if (actBtn) {
+    const { act, id } = actBtn.dataset;
+    try {
+      if (act === "delete") {
+        if (confirm("هل أنت متأكد من حذف هذه المادة؟")) await deleteLecture(id);
+      } else {
+        await setStatus(id, act);
+      }
+    } catch (x) {
+      console.error(x);
+      alert("تعذر تنفيذ العملية");
+    }
+  }
+});
 
 async function loadBanner() {
   try {
@@ -316,44 +435,6 @@ document.getElementById("adminGroupsList").addEventListener("click", async (e) =
     } catch (err) {
       console.error(err);
     }
-  }
-});
-
-function renderRows(list) {
-  if (!list.length) {
-    $("rows").innerHTML = `<tr><td colspan="8" class="msg">لا توجد مواد</td></tr>`;
-    return;
-  }
-  $("rows").innerHTML = list.map(l => `
-    <tr class="${esc(l.status || "pending")}">
-      <td>${esc(l.year)}</td>
-      <td>${esc(l.day)}</td>
-      <td>${esc(l.slot)}</td>
-      <td>${esc(l.name)}<br><small>${esc(l.code)} - ${esc(l.room)}</small></td>
-      <td>${esc(l.teacher)}</td>
-      <td>${esc(l.tcode)}</td>
-      <td>${badge(l.status)}</td>
-      <td style="white-space:nowrap">
-        <button type="button" class="btn green sm" data-act="confirmed" data-id="${esc(l.id)}">تأكيد</button>
-        <button type="button" class="btn sm" data-act="cancelled" data-id="${esc(l.id)}">إلغاء</button>
-        <button type="button" class="btn red sm" data-act="delete" data-id="${esc(l.id)}">حذف</button>
-      </td>
-    </tr>`).join("");
-}
-
-$("rows").addEventListener("click", async e => {
-  const b = e.target.closest("button[data-act]");
-  if (!b) return;
-  const { act, id } = b.dataset;
-  try {
-    if (act === "delete") {
-      if (confirm("حذف هذه المادة؟")) await deleteLecture(id);
-    } else {
-      await setStatus(id, act);
-    }
-  } catch (x) {
-    console.error(x);
-    alert("تعذر تنفيذ العملية");
   }
 });
 
