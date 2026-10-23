@@ -1,110 +1,3 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>جدول المحاضرات الشبكي</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css">
-<style>
-  body { font-family: 'Cairo', sans-serif; background-color: #0b0f19; color: #fff; margin: 0; padding: 20px; }
-  .wrap { max-width: 1200px; margin: auto; text-align: center; }
-  h1 { color: #00e5ff; margin-bottom: 5px; }
-  p.subtitle { color: #94a3b8; margin-bottom: 20px; font-size: 14px; }
-  .card { background: #131b2e; padding: 20px; border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 229, 255, 0.15); overflow-x: auto; border: 1px solid rgba(0, 229, 255, 0.2); }
-  
-  table.matrix-table { width: 100%; border-collapse: separate; border-spacing: 8px; text-align: center; }
-  table.matrix-table th, table.matrix-table td { padding: 12px; font-size: 14px; }
-  table.matrix-table th { background: rgba(0, 229, 255, 0.05); color: #00e5ff; font-weight: 700; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 10px; }
-  
-  .slot-cell {
-    background: rgba(255, 255, 255, 0.02);
-    border: 2px solid rgba(0, 229, 255, 0.3);
-    border-radius: 12px;
-    height: 120px;
-    vertical-align: middle;
-    transition: 0.3s;
-    padding: 8px;
-  }
-  .slot-cell:hover {
-    border-color: #00e5ff;
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-  }
-  
-  .has-lecture {
-    background: rgba(2, 132, 199, 0.15);
-    border: 2px solid #38bdf8;
-  }
-
-  /* تمييز المربعات بحسب الحالة */
-  .lec-confirmed {
-    border-color: #22c55e !important;
-    background: rgba(34, 197, 94, 0.15) !important;
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
-  }
-  .lec-cancelled {
-    border-color: #ef4444 !important;
-    background: rgba(239, 68, 68, 0.15) !important;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
-  }
-
-  .status-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: bold;
-    margin-bottom: 6px;
-  }
-  .status-confirmed { background: rgba(34, 197, 94, 0.25); color: #4ade80; border: 1px solid #22c55e; }
-  .status-cancelled { background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; }
-  .status-pending { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid #eab308; }
-
-  .lec-name { font-weight: 900; color: #fff; font-size: 14px; margin-bottom: 4px; }
-  .lec-code { font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); display: inline-block; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px; }
-  .lec-room, .lec-teacher { font-size: 11px; color: #cbd5e1; }
-
-  .btn { display: inline-block; padding: 10px 25px; background: #0284c7; color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; transition: 0.3s; margin-top: 20px; }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1 id="yearTitle">جدول المحاضرات</h1>
-  <p class="subtitle">خطوتك الأولى: جدول الأسبوع المعتمد</p>
-  
-  <!-- كارت مجموعـة الواتساب الخاصة بالسنة (ديناميكي من الفايربيس) -->
-  <div id="groupCard" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(37, 211, 102, 0.1); border: 1px solid #25d366; border-radius: 12px; text-align: center;">
-    <h3 style="color: #25d366; font-size: 1rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-      <i class="fab fa-whatsapp" style="font-size: 1.3rem;"></i> مجموعة الواتساب الخاصة بهذه السنة
-    </h3>
-    <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 12px;">انضم إلى المجموعة الرسمية للتواصل والتنسيق مع زملائك</p>
-    <a id="groupLink" href="#" target="_blank" style="background: #25d366; color: #fff; display: inline-flex; align-items: center; gap: 8px; font-weight: bold; padding: 8px 18px; text-decoration: none; border-radius: 8px; font-size: 0.9rem;">
-      <i class="fab fa-whatsapp"></i> الانضمام لجروب السنة
-    </a>
-  </div>
-
-  <div class="card">
-    <table class="matrix-table">
-      <thead>
-        <tr>
-          <th style="width: 120px;">Days</th>
-          <th>08:30 - 10:30</th>
-          <th>10:30 - 12:30</th>
-          <th>12:30 - 02:30</th>
-          <th>02:30 - 04:30</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-      </tbody>
-    </table>
-  </div>
-
-  <div class="links">
-    <a class="btn" href="index.html">الصفحة الرئيسية</a>
-  </div>
-</div>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -143,14 +36,14 @@
   function getSlotIndex(slotStr) {
     if (!slotStr) return -1;
     let s = slotStr.trim();
-    if (s.includes("08:30") || s.includes("8:30")) return 0;
-    if (s.includes("10:30")) return 1;
-    if (s.includes("12:30")) return 2;
-    if (s.includes("02:30") || s.includes("2:30")) return 3;
+    if (s.includes("08:30") || s.includes("8:30") || s.includes("08:00") || s.includes("8:00")) return 0;
+    if (s.includes("10:30") || s.includes("10:00")) return 1;
+    if (s.includes("12:30") || s.includes("12:00")) return 2;
+    if (s.includes("02:30") || s.includes("2:30") || s.includes("02:00") || s.includes("2:00")) return 3;
     return -1;
   }
 
-  // ⭐ الاستماع اللحظي الفوري مع الفلترة الذكية المطورة لتجنب الفراغات
+  // ⭐ عرض جميع المحاضرات فوراً وبدون أي شروط إخفاء
   onSnapshot(collection(db, "lectures"), (snapshot) => {
     let grid = {};
     days.forEach(d => { grid[d] = [null, null, null, null]; });
@@ -158,13 +51,13 @@
     snapshot.forEach(docSnap => {
       const item = docSnap.data();
       
-      // استخراج رقم السنة بذكاء سواء كانت نصية أو رقمية أو عبر yearNum
+      // استخراج رقم السنة بمرونة لتطابق النص أو الرقم
       let docYearStr = String(item.year || "").trim();
       let docYearNum = parseInt(docYearStr.replace(/\D/g, "")) || 0;
       if (item.yearNum) docYearNum = Number(item.yearNum);
 
-      if (docYearNum === yearParam || docYearStr.includes(yearParam)) {
-        let dayKey = item.day ? item.day.trim().replace("إ", "ا") : ""; // توحيد الهمزات لضمان التطابق
+      if (docYearNum === yearParam || docYearStr.includes(yearParam) || docYearStr.includes(yearNames[yearParam])) {
+        let dayKey = item.day ? item.day.trim().replace("إ", "ا") : "";
         let idx = getSlotIndex(item.slot);
         
         if (grid[dayKey] && idx !== -1) {
@@ -183,7 +76,7 @@
           let statusHTML = "";
           let extraClass = "";
 
-          // الفحص الدقيق لحالة المادة
+          // تحديد شكل الشارة حسب حالة المادة
           if (lec.status === "مؤكدة" || lec.status === "confirmed") {
             statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
             extraClass = "lec-confirmed";
@@ -191,9 +84,10 @@
             statusHTML = `<div class="status-badge status-cancelled">✕ ملغاة</div>`;
             extraClass = "lec-cancelled";
           } else {
-            statusHTML = `<div class="status-badge status-pending">غير محددة</div>`;
+            statusHTML = `<div class="status-badge status-pending">● غير محددة</div>`;
           }
 
+          // عرض بيانات المحاضرة دائماً داخل الخلية
           html += `
             <td class="slot-cell has-lecture ${extraClass}">
               ${statusHTML}
@@ -213,5 +107,3 @@
     document.getElementById('tableBody').innerHTML = html;
   });
 </script>
-</body>
-</html>
