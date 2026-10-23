@@ -175,12 +175,30 @@ function startPanel() {
   });
 }
 
-// دالة المقارنة والمرونة في تطابق النصوص للحفاظ على عرض المواد بشكل سليم
+// دالة مطابقة ذكية ومرنة تدعم تطابق النصوص والأرقام (مثل "3" مع "السنة الثالثة")
 function matchYear(docYear, targetYear) {
   if (!docYear || !targetYear) return false;
-  const cleanDoc = String(docYear).trim();
-  const cleanTarget = String(targetYear).trim();
-  return cleanDoc === cleanTarget || cleanDoc.includes(cleanTarget) || cleanTarget.includes(cleanDoc);
+  const map = {
+    "1": ["1", "السنة الأولى", "الأولى"],
+    "2": ["2", "السنة الثانية", "الثانية"],
+    "3": ["3", "السنة الثالثة", "الثالثة"],
+    "4": ["4", "السنة الرابعة", "الرابعة"]
+  };
+  const d = String(docYear).trim();
+  const t = String(targetYear).trim();
+  
+  let targetKey = t;
+  for (const [key, values] of Object.entries(map)) {
+    if (values.includes(t)) {
+      targetKey = key;
+      break;
+    }
+  }
+  
+  if (map[targetKey]) {
+    return map[targetKey].includes(d);
+  }
+  return d === t || d.includes(t) || t.includes(d);
 }
 
 function matchDay(docDay, targetDay) {
@@ -216,7 +234,7 @@ function renderAddedLectures() {
       </div>
     `;
   } else {
-    // تصفية المحاضرات باستخدام دالة المطابقة والمرونة
+    // تصفية المحاضرات باستخدام دالة المطابقة الذكية
     const filtered = allLectures.filter(l => matchYear(l.year, adminYear) && matchDay(l.day, adminDay));
     
     container.innerHTML = `
@@ -419,7 +437,7 @@ if (addTeacherForm) {
   addTeacherForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const name = document.getElementById("profName").value.trim();
-    const username = document.getElementById("profUsername").value.trim().replace("@", "");
+    const username = document.getElementById("profUsername").value.trim().replace("@", "", "");
 
     try {
       await addDoc(teachersColRef, {
