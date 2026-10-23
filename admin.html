@@ -175,7 +175,6 @@ function startPanel() {
   });
 }
 
-// دالة مطابقة ذكية ومرنة تدعم تطابق النصوص والأرقام (مثل "3" مع "السنة الثالثة")
 function matchYear(docYear, targetYear) {
   if (!docYear || !targetYear) return false;
   const map = {
@@ -206,7 +205,6 @@ function matchDay(docDay, targetDay) {
   return String(docDay).trim() === String(targetDay).trim();
 }
 
-// دالة عرض السنوات -> الأيام الستة -> جدول المحاضرات
 function renderAddedLectures() {
   const container = $("addedLecturesExplorer");
   if (!container) return;
@@ -234,7 +232,6 @@ function renderAddedLectures() {
       </div>
     `;
   } else {
-    // تصفية المحاضرات باستخدام دالة المطابقة الذكية
     const filtered = allLectures.filter(l => matchYear(l.year, adminYear) && matchDay(l.day, adminDay));
     
     container.innerHTML = `
@@ -270,7 +267,6 @@ function renderAddedLectures() {
   }
 }
 
-// أحداث النقر داخل قسم المواد المضافة
 $("addedLecturesExplorer").addEventListener("click", async e => {
   const yBtn = e.target.closest("button[data-adm-year]");
   if (yBtn) {
@@ -333,7 +329,6 @@ $("saveBannerBtn").addEventListener("click", async () => {
   }
 });
 
-// حفظ رابط مجموعة الواتساب للسنة
 const saveGroupForm = document.getElementById("saveGroupForm");
 if (saveGroupForm) {
   saveGroupForm.addEventListener("submit", async (e) => {
@@ -356,7 +351,6 @@ if (saveGroupForm) {
   });
 }
 
-// عرض روابط مجموعات السنوات
 onSnapshot(collection(db, "groups"), (snapshot) => {
   const container = document.getElementById("adminGroupsList");
   if (!container) return;
@@ -393,21 +387,32 @@ document.getElementById("adminGroupsList").addEventListener("click", async (e) =
   }
 });
 
+// ⭐ التعديل الجذري والذكي لإضافة المادة وتظهر فوراً للطلاب
 $("add").addEventListener("submit", async e => {
   e.preventDefault();
   try {
+    const selectedYear = $("year").value;
+    
+    let yearNumVal = "1";
+    if (selectedYear.includes("الثانية")) yearNumVal = "2";
+    else if (selectedYear.includes("الثالثة")) yearNumVal = "3";
+    else if (selectedYear.includes("الرابعة")) yearNumVal = "4";
+
     await addLecture({
       name: $("name").value.trim(),
       code: $("code").value.trim(),
-      year: $("year").value,
+      year: selectedYear,       // يخزن النص لخدمة لوحة التحكم
+      yearNum: yearNumVal,      // يخزن الرقم لخدمة واجهة الطلاب
       day: $("day").value,
       slot: $("slot").value.trim(),
       room: $("room").value.trim(),
       teacher: $("teacher").value.trim(),
       tcode: $("tcode").value.trim(),
-      status: "pending"
+      status: "confirmed"       // ✔ مؤكدة لكي تظهر فوراً في جدول الطلاب دون انتظار
     });
+
     e.target.reset();
+    alert("✔ تمت إضافة المادة بنجاح وظهرت فوراً في جدول الطلاب!");
   } catch (x) {
     console.error(x);
     alert("تعذرت إضافة المادة");
