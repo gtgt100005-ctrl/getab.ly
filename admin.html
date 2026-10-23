@@ -33,6 +33,13 @@
       <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
     </div>
 
+    <!-- زر التحديث السريع لجدول السنة الثالثة الرسمي -->
+    <div class="card" style="border: 2px solid #25d366;">
+      <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fas fa-calendar-alt" style="color:#25d366;"></i> التحديث السريع: جدول السنة الثالثة</h2>
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 12px;">اضغط هنا لحذف جدول السنة الثالثة القديم وتثبيت الجدول الجديد كلياً مع أكواد الأساتذة.</p>
+      <button id="updateYear3Btn" type="button" class="btn green" style="width:100%; font-weight:bold;">تحديث وتثبيت جدول السنة الثالثة الرسمي</button>
+    </div>
+
     <!-- قسم إدارة روابط مجموعات الواتساب للسنوات -->
     <div class="card">
       <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> إدارة روابط مجموعات الواتساب للسنوات</h2>
@@ -121,7 +128,7 @@
 
 <script type="module">
 import { db, DAYS, YEARS, watchLectures, addLecture, deleteLecture, setStatus, checkAdmin, changeAdmin, esc, badge } from "./app.js";
-import { doc, setDoc, getDoc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, setDoc, getDoc, collection, addDoc, deleteDoc, onSnapshot, query, where, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = id => document.getElementById(id);
 let watching = false;
@@ -184,6 +191,74 @@ $("saveBannerBtn").addEventListener("click", async () => {
   }
 });
 
+// زر التحديث التلقائي لجدول السنة الثالثة
+const updateYear3Btn = document.getElementById("updateYear3Btn");
+if (updateYear3Btn) {
+  updateYear3Btn.addEventListener("click", async () => {
+    if (!confirm("هل أنت متأكد من تحديث جدول السنة الثالثة وحذف القديم بالكامل؟")) return;
+    try {
+      updateYear3Btn.disabled = true;
+      updateYear3Btn.textContent = "جاري التحديث والحذف...";
+
+      const teacherCodes = {
+        "د. المهدي صالح المهدي": "T_MAHDI",
+        "د. عائشة مصطفى المقريف": "T_AISHA",
+        "د. ربيع عبدالله أبوعجيزة": "T_RABIA_A",
+        "أ. عبدالروؤف إبراهيم نصر": "T_ABDULRAOUF",
+        "أ. عبدالرحمن محمد القدافي": "T_ABDULRAHMAN",
+        "أ. عبدالرحمن القدافي": "T_ABDULRAHMAN",
+        "د. مصطفى عبدالسلام المبرد": "T_MUSTAFA",
+        "د. ربيعة فرج المرغني": "T_RABIA_M"
+      };
+
+      const year3Lectures = [
+        { year: "السنة الثالثة", day: "السبت", slot: "08:30 - 10:30", name: "جغرافية زراعية", code: "GE306", teacher: "د. المهدي صالح المهدي", room: "القاعة 8", status: "pending" },
+        { year: "السنة الثالثة", day: "الأحد", slot: "10:30 - 12:30", name: "جغرافية العالم الجديد", code: "GE307", teacher: "د. عائشة مصطفى المقريف", room: "القاعة 8", status: "pending" },
+        { year: "السنة الثالثة", day: "الأحد", slot: "12:30 - 02:30", name: "جغرافية السكان", code: "GE301", teacher: "د. ربيع عبدالله أبوعجيزة", room: "المعمل", status: "pending" },
+        { year: "السنة الثالثة", day: "الثلاثاء", slot: "08:30 - 10:30", name: "خرائط توزيعات", code: "GE309", teacher: "أ. عبدالروؤف إبراهيم نصر", room: "القاعة 8", status: "pending" },
+        { year: "السنة الثالثة", day: "الثلاثاء", slot: "12:30 - 02:30", name: "جغرافية التربة", code: "GE304", teacher: "أ. عبدالرحمن محمد القدافي", room: "القاعة 8", status: "pending" },
+        { year: "السنة الثالثة", day: "الثلاثاء", slot: "02:30 - 04:30", name: "جغرافية النقل", code: "GE302", teacher: "أ. عبدالرحمن القدافي", room: "المعمل", status: "pending" },
+        { year: "السنة الثالثة", day: "الأربعاء", slot: "08:30 - 10:30", name: "الجغرافيا الصناعية", code: "GE308", teacher: "أ. عبدالروؤف إبراهيم نصر", room: "القاعة 8", status: "pending" },
+        { year: "السنة الثالثة", day: "الأربعاء", slot: "12:30 - 02:30", name: "الاستشعار عن بعد", code: "GE303", teacher: "د. مصطفى عبدالسلام المبرد", room: "المعمل", status: "pending" },
+        { year: "السنة الثالثة", day: "الأربعاء", slot: "02:30 - 04:30", name: "الاستشعار عن بعد", code: "GE303", teacher: "د. مصطفى عبدالسلام المبرد", room: "المعمل", status: "pending" },
+        { year: "السنة الثالثة", day: "الخميس", slot: "08:30 - 10:30", name: "تلوث البيئة", code: "GE305", teacher: "د. عائشة مصطفى المقريف", room: "المعمل", status: "pending" },
+        { year: "السنة الثالثة", day: "الخميس", slot: "10:30 - 12:30", name: "جغرافية المدن", code: "GE311", teacher: "د. ربيعة فرج المرغني", room: "القاعة 8", status: "pending" },
+        { year: "السنة الثالثة", day: "الخميس", slot: "12:30 - 02:30", name: "جغرافية حيوية", code: "GE310", teacher: "د. ربيعة فرج المرغني", room: "القاعة 8", status: "pending" }
+      ];
+
+      const lecturesWithCodes = year3Lectures.map(lec => ({
+        ...lec,
+        tcode: teacherCodes[lec.teacher] || "UNKNOWN"
+      }));
+
+      const lecturesRef = collection(db, "lectures");
+      const q = query(lecturesRef, where("year", "==", "السنة الثالثة"));
+      const querySnapshot = await getDocs(q);
+
+      const batch = writeBatch(db);
+      querySnapshot.forEach((document) => {
+        batch.delete(document.ref);
+      });
+      await batch.commit();
+
+      const addBatch = writeBatch(db);
+      lecturesWithCodes.forEach((lec) => {
+        const newDocRef = doc(lecturesRef);
+        addBatch.set(newDocRef, lec);
+      });
+      await addBatch.commit();
+
+      alert("✅ تم تحديث جدول السنة الثالثة وحذف القديم بنجاح كامل!");
+    } catch (err) {
+      console.error(err);
+      alert("❌ حدث خطأ أثناء تحديث جدول السنة الثالثة");
+    } finally {
+      updateYear3Btn.disabled = false;
+      updateYear3Btn.textContent = "تحديث وتثبيت جدول السنة الثالثة الرسمي";
+    }
+  });
+}
+
 // حفظ رابط مجموعة الواتساب للسنة
 const saveGroupForm = document.getElementById("saveGroupForm");
 if (saveGroupForm) {
@@ -231,7 +306,6 @@ onSnapshot(collection(db, "groups"), (snapshot) => {
   });
 });
 
-// الاستماع لضغطات الحذف الخاصة بالمجموعات
 document.getElementById("adminGroupsList").addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-del-group]");
   if (!btn) return;
@@ -239,10 +313,8 @@ document.getElementById("adminGroupsList").addEventListener("click", async (e) =
   if (confirm("هل أنت متأكد من حذف رابط هذه المجموعة؟")) {
     try {
       await deleteDoc(doc(db, "groups", groupId));
-      alert("✔ تم حذف الرابط التجريبي بنجاح!");
     } catch (err) {
       console.error(err);
-      alert("تعذر حذف الرابط");
     }
   }
 });
@@ -322,7 +394,6 @@ $("pwf").addEventListener("submit", async e => {
   }
 });
 
-// إدارة تواصل الأساتذة في فايربيس
 const teachersColRef = collection(db, "teachers");
 
 const addTeacherForm = document.getElementById("addTeacherForm");
