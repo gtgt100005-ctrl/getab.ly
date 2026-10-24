@@ -16,6 +16,13 @@
 </div>
 
 <div class="wrap">
+  
+  <!-- شعار القسم (الصورة) -->
+  <div style="text-align: center; margin-bottom: 20px;">
+    <img src="department-logo.jpg" alt="شعار القسم" style="width: 120px; height: 120px; object-fit: contain; border-radius: 50%; border: 2px solid var(--line); background: #0b1024; padding: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <h2 style="color: #4deeea; font-size: 1.2rem; margin-top: 10px; font-weight: bold;">قسم الجغرافيا - كلية الآداب والعلوم مسلاتة</h2>
+  </div>
+
   <h1>جداول المحاضرات الدراسية</h1>
   
   <div class="card">
@@ -49,9 +56,30 @@
   </div>
 </div>
 
+<!-- تذييل الصفحة (Footer) مع أيقونة الفيسبوك وشعر القسم وحقوق النشر -->
+<footer style="margin-top: 50px; padding: 25px 20px; text-align: center; border-top: 1px solid rgba(0, 229, 255, 0.2); background: #0b0f19; color: #94a3b8;">
+  
+  <!-- شعار أو بيت شعر القسم -->
+  <p style="font-size: 14px; color: #38bdf8; margin-bottom: 15px; font-weight: bold; font-family: 'Cairo', sans-serif;">
+    "العلم نور والجهل ظلام، وخطوتنا نحو المعرفة دائماً مستمرة في رحاب الجغرافيا"
+  </p>
+
+  <!-- أيقونة الفيسبوك -->
+  <div style="margin-bottom: 15px;">
+    <a id="footerFbLink" href="#" target="_blank" style="display: inline-flex; justify-content: center; align-items: center; width: 42px; height: 42px; background: rgba(24, 119, 242, 0.15); border: 1px solid #1877f2; border-radius: 50%; color: #1877f2; font-size: 18px; text-decoration: none; transition: 0.3s;">
+      <i class="fab fa-facebook-f"></i>
+    </a>
+  </div>
+
+  <!-- حقوق النشر المحفوظة -->
+  <p style="font-size: 12px; color: #64748b; margin: 0;">
+    جميع الحقوق محفوظة © 2026 | قسم الجغرافيا - جامعة المرقب
+  </p>
+</footer>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, onSnapshot, collection, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   
   const db = getFirestore(initializeApp({
     apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
@@ -62,6 +90,15 @@
     appId: "1:340855843654:web:cc672b26682c19903e5347",
     measurementId: "G-FNYMMC3Z6V"
   }));
+
+  // جلب رابط الفيسبوك ديناميكياً من قاعدة البيانات
+  getDoc(doc(db, "settings", "facebook")).then(docSnap => {
+    if (docSnap.exists() && docSnap.data().url) {
+      document.getElementById('footerFbLink').href = docSnap.data().url;
+    } else {
+      document.getElementById('footerFbLink').style.display = 'none';
+    }
+  }).catch(err => console.error(err));
 
   // إظهار وإخفاء واجهة الواتساب عند الضغط على الزر الثالث
   const contactBtn = document.getElementById("toggleContactBtn");
@@ -76,7 +113,7 @@
     }
   });
 
-  // الاستماع اللحظي للكتلة العارضة
+  // الاستماع اللحظي للكتلة العارضة (اللافتة)
   onSnapshot(doc(db, "settings", "banner"), (docSnap) => {
     if (docSnap.exists() && docSnap.data().text) {
       const banner = document.getElementById('announcementBanner');
