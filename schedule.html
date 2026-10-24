@@ -40,12 +40,10 @@
   .lec-confirmed {
     border-color: #22c55e !important;
     background: rgba(34, 197, 94, 0.15) !important;
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
   }
   .lec-cancelled {
     border-color: #ef4444 !important;
     background: rgba(239, 68, 68, 0.15) !important;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
   }
 
   .status-badge {
@@ -107,136 +105,138 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
-    authDomain: "moez-125d2.firebaseapp.com",
-    projectId: "moez-125d2",
-    storageBucket: "moez-125d2.firebasestorage.app",
-    messagingSenderId: "340855843654",
-    appId: "1:340855843654:web:cc672b26682c19903e5347",
-    measurementId: "G-FNYMMC3Z6V"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const yearParam = parseInt(urlParams.get('year') || "1");
-
-  const yearNames = { 1: "السنة الأولى", 2: "السنة الثانية", 3: "السنة الثالثة", 4: "السنة الرابعة" };
-  document.getElementById('yearTitle').innerText = `جدول محاضرات ${yearNames[yearParam] || 'الدراسة'}`;
-
-  onSnapshot(doc(db, "groups", `year_${yearParam}`), (docSnap) => {
-    if (docSnap.exists() && docSnap.data().url) {
-      document.getElementById('groupLink').href = docSnap.data().url;
-      document.getElementById('groupCard').style.display = "block";
-    } else {
-      document.getElementById('groupCard').style.display = "none";
-    }
-  });
-
-  const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
-
-  // ⭐ دالة ذكية ومرنة للغاية لقراءة الوقت وتحديد العمود دون فقدان أي محاضرة
-  function getSlotIndex(slotStr) {
-    if (!slotStr) return 0; // افتراضي للأولى إن لم يُحدد
-    let s = slotStr.trim();
-    
-    if (s.includes("08") || s.includes("8:") || s.includes("800") || s.includes("8.00")) return 0;
-    if (s.includes("10:") || s.includes("1000") || s.includes("10.00")) return 1;
-    if (s.includes("12:") || s.includes("1200") || s.includes("12.00")) return 2;
-    if (s.includes("02:") || s.includes("2:") || s.includes("200") || s.includes("14:") || s.includes("03:") || s.includes("3:")) return 3;
-    
-    // استخراج أول رقم في النص كحل احتياطي ذكي لمنع ضياع أي محاضرة
-    let match = s.match(/\d+/);
-    if (match) {
-      let hour = parseInt(match[0]);
-      if (hour === 8 || hour === 9) return 0;
-      if (hour === 10 || hour === 11) return 1;
-      if (hour === 12 || hour === 1) return 2;
-      if (hour >= 2 && hour <= 5) return 3;
-      if (hour >= 13 && hour <= 15) return 3;
-    }
-    
-    return 0; // ضمان عدم إخفاء المحاضرة نهائياً
-  }
-
-  // ⭐ مطابقة شاملة لكل صيغ السنوات (نصية أو رقمية)
-  function matchYear(docYear, targetYearNum) {
-    if (!docYear && docYear !== 0) return false;
-    const d = String(docYear).trim();
-    const maps = {
-      1: ["1", "الأولى", "اولى", "first"],
-      2: ["2", "الثانية", "ثانية", "second"],
-      3: ["3", "الثالثة", "ثالثة", "third"],
-      4: ["4", "الرابعة", "رابعة", "fourth"]
+  try {
+    const firebaseConfig = {
+      apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
+      authDomain: "moez-125d2.firebaseapp.com",
+      projectId: "moez-125d2",
+      storageBucket: "moez-125d2.firebasestorage.app",
+      messagingSenderId: "340855843654",
+      appId: "1:340855843654:web:cc672b26682c19903e5347",
+      measurementId: "G-FNYMMC3Z6V"
     };
-    
-    if (maps[targetYearNum]) {
-      if (maps[targetYearNum].some(term => d.includes(term))) return true;
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const yearParam = parseInt(urlParams.get('year') || "1");
+
+    const yearNames = { 1: "السنة الأولى", 2: "السنة الثانية", 3: "السنة الثالثة", 4: "السنة الرابعة" };
+    const titleEl = document.getElementById('yearTitle');
+    if (titleEl) titleEl.innerText = `جدول محاضرات ${yearNames[yearParam] || 'الدراسة'}`;
+
+    onSnapshot(doc(db, "groups", `year_${yearParam}`), (docSnap) => {
+      const groupCard = document.getElementById('groupCard');
+      const groupLink = document.getElementById('groupLink');
+      if (docSnap.exists() && docSnap.data().url) {
+        if (groupLink) groupLink.href = docSnap.data().url;
+        if (groupCard) groupCard.style.display = "block";
+      } else {
+        if (groupCard) groupCard.style.display = "none";
+      }
+    });
+
+    const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
+
+    function getSlotIndex(slotStr) {
+      if (!slotStr) return 0;
+      let s = String(slotStr).trim();
+      if (s.includes("08") || s.includes("8:") || s.includes("800")) return 0;
+      if (s.includes("10:") || s.includes("1000")) return 1;
+      if (s.includes("12:") || s.includes("1200")) return 2;
+      if (s.includes("02:") || s.includes("2:") || s.includes("14:") || s.includes("03:") || s.includes("3:")) return 3;
+      
+      let match = s.match(/\d+/);
+      if (match) {
+        let hour = parseInt(match[0]);
+        if (hour === 8 || hour === 9) return 0;
+        if (hour === 10 || hour === 11) return 1;
+        if (hour === 12 || hour === 1) return 2;
+        if (hour >= 2 && hour <= 5) return 3;
+        if (hour >= 13 && hour <= 15) return 3;
+      }
+      return 0;
     }
-    
-    let nums = d.replace(/\D/g, "");
-    if (nums && parseInt(nums) === targetYearNum) return true;
-    
-    return false;
-  }
 
-  onSnapshot(collection(db, "lectures"), (snapshot) => {
-    let grid = {};
-    days.forEach(d => { grid[d] = [null, null, null, null]; });
+    function matchYear(docYear, targetYearNum) {
+      if (!docYear && docYear !== 0) return false;
+      const d = String(docYear).trim();
+      const maps = {
+        1: ["1", "الأولى", "اولى"],
+        2: ["2", "الثانية", "ثانية"],
+        3: ["3", "الثالثة", "ثالثة"],
+        4: ["4", "الرابعة", "رابعة"]
+      };
+      if (maps[targetYearNum] && maps[targetYearNum].some(term => d.includes(term))) return true;
+      let nums = d.replace(/\D/g, "");
+      if (nums && parseInt(nums) === targetYearNum) return true;
+      return false;
+    }
 
-    snapshot.forEach(docSnap => {
-      const item = docSnap.data();
-      
-      if (matchYear(item.year, yearParam) || matchYear(item.yearNum, yearParam)) {
-        let dayKey = item.day ? item.day.trim().replace("إ", "ا") : "";
-        let idx = getSlotIndex(item.slot);
-        
-        if (grid[dayKey] && idx >= 0 && idx < 4) {
-          grid[dayKey][idx] = item;
-        }
-      }
-    });
+    onSnapshot(collection(db, "lectures"), (snapshot) => {
+      let grid = {};
+      days.forEach(d => { grid[d] = [null, null, null, null]; });
 
-    let html = "";
-    days.forEach(day => {
-      html += `<tr><th style="font-weight: 900; color: #fff;">${day}</th>`;
-      
-      for (let i = 0; i < 4; i++) {
-        let lec = grid[day][i];
-        if (lec) {
-          let statusHTML = "";
-          let extraClass = "";
-
-          if (lec.status === "مؤكدة" || lec.status === "confirmed") {
-            statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
-            extraClass = "lec-confirmed";
-          } else if (lec.status === "ملغاة" || lec.status === "cancelled") {
-            statusHTML = `<div class="status-badge status-cancelled">✕ ملغاة</div>`;
-            extraClass = "lec-cancelled";
-          } else {
-            statusHTML = `<div class="status-badge status-pending">● غير محددة</div>`;
+      snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        if (matchYear(item.year, yearParam) || matchYear(item.yearNum, yearParam)) {
+          let dayKey = item.day ? item.day.trim().replace("إ", "ا") : "";
+          let idx = getSlotIndex(item.slot);
+          if (grid[dayKey] && idx >= 0 && idx < 4) {
+            grid[dayKey][idx] = item;
           }
-
-          html += `
-            <td class="slot-cell has-lecture ${extraClass}">
-              ${statusHTML}
-              <div class="lec-name">${lec.name}</div>
-              <div class="lec-code">${lec.code}</div>
-              <div class="lec-room">📍 ${lec.room}</div>
-              <div class="lec-teacher">👨‍🏫 ${lec.teacher}</div>
-            </td>
-          `;
-        } else {
-          html += `<td class="slot-cell"></td>`;
         }
-      }
-      html += `</tr>`;
+      });
+
+      let html = "";
+      days.forEach(day => {
+        html += `<tr><th style="font-weight: 900; color: #fff;">${day}</th>`;
+        
+        for (let i = 0; i < 4; i++) {
+          let lec = grid[day][i];
+          if (lec) {
+            let statusHTML = "";
+            let extraClass = "";
+
+            if (lec.status === "مؤكدة" || lec.status === "confirmed") {
+              statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
+              extraClass = "lec-confirmed";
+            } else if (lec.status === "ملغاة" || lec.status === "cancelled") {
+              statusHTML = `<div class="status-badge status-cancelled">✕ ملغاة</div>`;
+              extraClass = "lec-cancelled";
+            } else {
+              statusHTML = `<div class="status-badge status-pending">● غير محددة</div>`;
+            }
+
+            html += `
+              <td class="slot-cell has-lecture ${extraClass}">
+                ${statusHTML}
+                <div class="lec-name">${esc(lec.name)}</div>
+                <div class="lec-code">${esc(lec.code)}</div>
+                <div class="lec-room">📍 ${esc(lec.room)}</div>
+                <div class="lec-teacher">👨‍ศาส ${esc(lec.teacher)}</div>
+              </td>
+            `;
+          } else {
+            html += `<td class="slot-cell"></td>`;
+          }
+        }
+        html += `</tr>`;
+      });
+
+      const tableBody = document.getElementById('tableBody');
+      if (tableBody) tableBody.innerHTML = html;
     });
 
-    document.getElementById('tableBody').innerHTML = html;
-  });
+    function esc(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+  } catch (err) {
+    console.error("خطأ تشغيلي:", err);
+  }
 </script>
 </body>
 </html>
