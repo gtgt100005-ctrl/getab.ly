@@ -33,6 +33,20 @@
       <button id="saveBannerBtn" type="button" class="btn green" style="width:100%">حفظ ونشر اللافتة</button>
     </div>
 
+    <!-- قسم إدارة رابط الفيسبوك -->
+    <div class="card">
+      <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-facebook" style="color:#1877f2;"></i> إدارة رابط صفحة الفيسبوك</h2>
+      <form id="saveFacebookForm" class="form">
+        <div>
+          <label for="facebookUrl">رابط صفحة الفيسبوك</label>
+          <input id="facebookUrl" placeholder="https://www.facebook.com/..." required dir="ltr">
+        </div>
+        <div style="grid-column:1/-1">
+          <button type="submit" class="btn green" style="width:100%">حفظ وتحديث رابط الفيسبوك</button>
+        </div>
+      </form>
+    </div>
+
     <!-- قسم إدارة روابط مجموعات الواتساب للسنوات -->
     <div class="card">
       <h2 style="display: flex; align-items: center; gap: 8px;"><i class="fab fa-whatsapp" style="color:#25d366;"></i> إدارة روابط مجموعات الواتساب للسنوات</h2>
@@ -171,6 +185,7 @@ $("out").addEventListener("click", () => location.reload());
 
 function startPanel() {
   loadBanner();
+  loadFacebookUrl();
   renderAddedLectures();
   if (watching) return;
   watching = true;
@@ -328,6 +343,15 @@ async function loadBanner() {
   } catch (e) { console.error(e); }
 }
 
+async function loadFacebookUrl() {
+  try {
+    const docSnap = await getDoc(doc(db, "settings", "facebook"));
+    if (docSnap.exists() && docSnap.data().url) {
+      $("facebookUrl").value = docSnap.data().url;
+    }
+  } catch (e) { console.error(e); }
+}
+
 $("saveBannerBtn").addEventListener("click", async () => {
   try {
     await setDoc(doc(db, "settings", "banner"), { text: $("bannerText").value.trim() });
@@ -337,6 +361,24 @@ $("saveBannerBtn").addEventListener("click", async () => {
     alert("تعذر حفظ اللافتة");
   }
 });
+
+const saveFacebookForm = document.getElementById("saveFacebookForm");
+if (saveFacebookForm) {
+  saveFacebookForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fbUrl = document.getElementById("facebookUrl").value.trim();
+    try {
+      await setDoc(doc(db, "settings", "facebook"), {
+        url: fbUrl,
+        updatedAt: new Date()
+      });
+      alert("✔ تم حفظ وتحديث رابط الفيسبوك بنجاح!");
+    } catch (error) {
+      console.error(error);
+      alert("تعذر حفظ رابط الفيسبوك");
+    }
+  });
+}
 
 const saveGroupForm = document.getElementById("saveGroupForm");
 if (saveGroupForm) {
