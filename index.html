@@ -17,9 +17,9 @@
 
 <div class="wrap">
   
-  <!-- قسم شعار وحجم قسم الجغرافيا -->
+  <!-- شعار القسم -->
   <div style="text-align: center; margin-bottom: 25px;">
-    <img src="department-logo.png" alt="شعار قسم الجغرافيا" style="width: 140px; height: 140px; object-fit: contain; border-radius: 50%; border: 3px solid #4deeea; background: #0b1024; padding: 5px; box-shadow: 0 0 20px rgba(77, 238, 234, 0.3);">
+    <img src="image.png" alt="شعار القسم" style="width: 140px; height: 140px; object-fit: contain; border-radius: 50%; border: 3px solid #4deeea; background: #0b1024; padding: 5px; box-shadow: 0 0 20px rgba(77, 238, 234, 0.3);">
     <h2 style="color: #4deeea; font-size: 1.3rem; margin-top: 12px; font-weight: bold;">قسم الجغرافيا - كلية الآداب والعلوم مسلاتة</h2>
     <p style="color: #a0aec0; font-size: 0.95rem; margin-top: 5px;">جامعة المرقب</p>
   </div>
@@ -57,7 +57,7 @@
   </div>
 </div>
 
-<!-- تذييل الصفحة (Footer) المشتمل على شعر القسم، أيقونة الفيسبوك، وحقوق النشر -->
+<!-- تذييل الصفحة (Footer) -->
 <footer style="margin-top: 50px; padding: 30px 20px; text-align: center; border-top: 1px solid rgba(0, 229, 255, 0.2); background: #0b0f19; color: #94a3b8;">
   
   <!-- شعر أو عبارة القسم -->
@@ -65,7 +65,7 @@
     "العلم نور والجهل ظلام، وخطوتنا نحو المعرفة دائماً مستمرة في رحاب الجغرافيا"
   </p>
 
-  <!-- أيقونة الفيسبوك والتواصل -->
+  <!-- أيقونة الفيسبوك -->
   <div style="margin-bottom: 18px; display: flex; justify-content: center; align-items: center; gap: 12px;">
     <a id="footerFbLink" href="#" target="_blank" title="صفحة الفيسبوك" style="display: inline-flex; justify-content: center; align-items: center; width: 45px; height: 45px; background: rgba(24, 119, 242, 0.15); border: 1px solid #1877f2; border-radius: 50%; color: #1877f2; font-size: 20px; text-decoration: none; transition: all 0.3s ease;">
       <i class="fab fa-facebook-f"></i>
@@ -74,7 +74,7 @@
 
   <!-- حقوق النشر المحفوظة -->
   <p style="font-size: 13px; color: #64748b; margin: 0; font-family: 'Cairo', sans-serif;">
-    جميع الحقوق محفوظة © 2026 | قسم الجغرافيا - كلية الآداب والعلوم مسلاتة - جامعة المرقب
+    جميع الحقوق محفوظة © 2026 | تصميم وتطوير: المطور MoEz
   </p>
 </footer>
 
@@ -98,7 +98,6 @@
     if (docSnap.exists() && docSnap.data().url) {
       fbBtn.href = docSnap.data().url;
     } else {
-      // رابط افتراضي إذا لم يتم إدخال رابط بعد من لوحة الكنترول
       fbBtn.href = "https://facebook.com";
     }
   }).catch(err => console.error("Facebook URL Error:", err));
