@@ -140,17 +140,29 @@
 
   const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
 
+  // ⭐ دالة مطورة ومضبوطة لربط الفترة الزمنية بالعمود بدقة تامة وبدون أي تفكك
   function getSlotIndex(slotStr) {
     if (!slotStr) return -1;
-    let s = slotStr.trim();
-    if (s.includes("08:30") || s.includes("8:30") || s.includes("08:00") || s.includes("8:00")) return 0;
+    let s = slotStr.trim().toLowerCase();
+    
+    if (s.includes("8:30") || s.includes("08:30") || s.includes("8:00") || s.includes("08:00")) return 0;
     if (s.includes("10:30") || s.includes("10:00")) return 1;
     if (s.includes("12:30") || s.includes("12:00")) return 2;
-    if (s.includes("02:30") || s.includes("2:30") || s.includes("02:00") || s.includes("2:00")) return 3;
+    if (s.includes("2:30") || s.includes("02:30") || s.includes("2:00") || s.includes("02:00")) return 3;
+    
     return -1;
   }
 
-  // الاستماع اللحظي الفوري لأي تغيير في Firebase
+  // ⭐ توحيد أسماء الأيام والهمزات لضمان التطابق السليم
+  function cleanDayName(dayStr) {
+    if (!dayStr) return "";
+    return dayStr.trim()
+      .replace("إ", "ا")
+      .replace("أ", "ا")
+      .replace("آ", "ا");
+  }
+
+  // الاستماع اللحظي الفوري لأي تغيير في Firebase مع المعالجة الدقيقة للسنوات والأيام
   onSnapshot(collection(db, "lectures"), (snapshot) => {
     let grid = {};
     days.forEach(d => { grid[d] = [null, null, null, null]; });
@@ -158,16 +170,17 @@
     snapshot.forEach(docSnap => {
       const item = docSnap.data();
 
-      // ⭐ التعديل الذكي للمطابقة: تحويل السنة لرقم مهما كانت صيغتها المخزنة
       let itemYearStr = String(item.year || "").trim();
       let itemYearNum = parseInt(itemYearStr.replace(/\D/g, "")) || Number(item.year);
       if (item.yearNum) itemYearNum = Number(item.yearNum);
 
       if (itemYearNum === yearParam || itemYearStr.includes(yearNames[yearParam])) {
-        let dayKey = item.day ? item.day.trim().replace("إ", "ا") : "";
+        let dayKey = cleanDayName(item.day);
         let idx = getSlotIndex(item.slot);
-        if (grid[dayKey] && idx !== -1) {
-          grid[dayKey][idx] = item;
+        
+        let matchedDay = days.find(d => cleanDayName(d) === dayKey);
+        if (matchedDay && idx !== -1) {
+          grid[matchedDay][idx] = item;
         }
       }
     });
@@ -182,7 +195,6 @@
           let statusHTML = "";
           let extraClass = "";
 
-          // الفحص الدقيق لخاصية status المحدثة من الأستاذ
           if (lec.status === "مؤكدة" || lec.status === "confirmed") {
             statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
             extraClass = "lec-confirmed";
