@@ -106,120 +106,100 @@
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { db, watchLectures } from "./app.js";
+  import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  try {
-    const firebaseConfig = {
-      apiKey: "AIzaSyDMqDQWkQI0Pj3HkQs0bqmT0JTmi8mVfJk",
-      authDomain: "moez-125d2.firebaseapp.com",
-      projectId: "moez-125d2",
-      storageBucket: "moez-125d2.firebasestorage.app",
-      messagingSenderId: "340855843654",
-      appId: "1:340855843654:web:cc672b26682c19903e5347",
-      measurementId: "G-FNYMMC3Z6V"
-    };
+  const urlParams = new URLSearchParams(window.location.search);
+  const yearParam = parseInt(urlParams.get('year') || "1");
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const yearNames = { 1: "السنة الأولى", 2: "السنة الثانية", 3: "السنة الثالثة", 4: "السنة الرابعة" };
+  document.getElementById('yearTitle').innerText = `جدول محاضرات ${yearNames[yearParam] || 'الدراسة'}`;
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const yearParam = parseInt(urlParams.get('year') || "1");
+  // جلب رابط جروب الواتساب الخاص بالسنة باستخدام db من app.js
+  onSnapshot(doc(db, "groups", `year_${yearParam}`), (docSnap) => {
+    try {
+      if (docSnap.exists() && docSnap.data().url) {
+        document.getElementById('groupLink').href = docSnap.data().url;
+        document.getElementById('groupCard').style.display = "block";
+      } else {
+        document.getElementById('groupCard').style.display = "none";
+      }
+    } catch (e) { console.error(e); }
+  });
 
-    const yearNames = { 1: "السنة الأولى", 2: "السنة الثانية", 3: "السنة الثالثة", 4: "السنة الرابعة" };
-    document.getElementById('yearTitle').innerText = `جدول محاضرات ${yearNames[yearParam] || 'الدراسة'}`;
+  const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
 
-    // جلب رابط جروب الواتساب الخاص بالسنة من الفايربيس
-    onSnapshot(doc(db, "groups", `year_${yearParam}`), (docSnap) => {
-      try {
-        if (docSnap.exists() && docSnap.data().url) {
-          document.getElementById('groupLink').href = docSnap.data().url;
-          document.getElementById('groupCard').style.display = "block";
-        } else {
-          document.getElementById('groupCard').style.display = "none";
-        }
-      } catch (e) { console.error(e); }
-    });
-
-    const days = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس"];
-
-    function getSlotIndex(slotStr) {
-      if (!slotStr) return -1;
-      let s = slotStr.trim();
-      if (s.includes("08:30") || s.includes("8:30") || s.includes("08:00") || s.includes("8:00")) return 0;
-      if (s.includes("10:30") || s.includes("10:00")) return 1;
-      if (s.includes("12:30") || s.includes("12:00")) return 2;
-      if (s.includes("02:30") || s.includes("2:30") || s.includes("02:00") || s.includes("2:00")) return 3;
-      return -1;
-    }
-
-    // الاستماع اللحظي للمحاضرات
-    onSnapshot(collection(db, "lectures"), (snapshot) => {
-      let grid = {};
-      days.forEach(d => { grid[d] = [null, null, null, null]; });
-
-      snapshot.forEach(docSnap => {
-        const item = docSnap.data();
-        let docYearStr = String(item.year || "").trim();
-        let docYearNum = parseInt(docYearStr.replace(/\D/g, "")) || 0;
-        if (item.yearNum) docYearNum = Number(item.yearNum);
-
-        if (docYearNum === yearParam || docYearStr.includes(yearParam) || docYearStr.includes(yearNames[yearParam])) {
-          let dayKey = item.day ? item.day.trim().replace("إ", "ا") : "";
-          let idx = getSlotIndex(item.slot);
-          
-          if (grid[dayKey] && idx !== -1) {
-            grid[dayKey][idx] = item;
-          }
-        }
-      });
-
-      let html = "";
-      days.forEach(day => {
-        html += `<tr><th style="font-weight: 900; color: #fff;">${day}</th>`;
-        
-        for (let i = 0; i < 4; i++) {
-          let lec = grid[day][i];
-          if (lec) {
-            let statusHTML = "";
-            let extraClass = "";
-
-            if (lec.status === "مؤكدة" || lec.status === "confirmed") {
-              statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
-              extraClass = "lec-confirmed";
-            } else if (lec.status === "ملغاة" || lec.status === "cancelled") {
-              statusHTML = `<div class="status-badge status-cancelled">✕ ملغاة</div>`;
-              extraClass = "lec-cancelled";
-            } else {
-              statusHTML = `<div class="status-badge status-pending">● غير محددة</div>`;
-            }
-
-            html += `
-              <td class="slot-cell has-lecture ${extraClass}">
-                ${statusHTML}
-                <div class="lec-name">${lec.name}</div>
-                <div class="lec-code">${lec.code}</div>
-                <div class="lec-room">📍 ${lec.room}</div>
-                <div class="lec-teacher">👨‍🏫 ${lec.teacher}</div>
-              </td>
-            `;
-          } else {
-            html += `<td class="slot-cell"></td>`;
-          }
-        }
-        html += `</tr>`;
-      });
-
-      document.getElementById('tableBody').innerHTML = html;
-    }, (error) => {
-      console.error("Firebase Snapshot Error:", error);
-      document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #ff4d6d;">تعذر جلب البيانات، تأكد من الاتصال بالإنترنت.</td></tr>`;
-    });
-
-  } catch (err) {
-    console.error("Initialization Error:", err);
-    document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #ff4d6d;">حدث خطأ أثناء تحميل الصفحة. تأكد من تشغيل المشروع عبر سيرفر محلي (Live Server).</td></tr>`;
+  function getSlotIndex(slotStr) {
+    if (!slotStr) return -1;
+    let s = slotStr.trim();
+    if (s.includes("08:30") || s.includes("8:30") || s.includes("08:00") || s.includes("8:00")) return 0;
+    if (s.includes("10:30") || s.includes("10:00")) return 1;
+    if (s.includes("12:30") || s.includes("12:00")) return 2;
+    if (s.includes("02:30") || s.includes("2:30") || s.includes("02:00") || s.includes("2:00")) return 3;
+    return -1;
   }
+
+  // الاستماع اللحظي للمحاضرات عبر دوال app.js الموحدة والمستقرة
+  watchLectures(null, null, (snapshotList) => {
+    let grid = {};
+    days.forEach(d => { grid[d] = [null, null, null, null]; });
+
+    snapshotList.forEach(item => {
+      let docYearStr = String(item.year || "").trim();
+      let docYearNum = parseInt(docYearStr.replace(/\D/g, "")) || 0;
+      if (item.yearNum) docYearNum = Number(item.yearNum);
+
+      if (docYearNum === yearParam || docYearStr.includes(yearParam) || docYearStr.includes(yearNames[yearParam])) {
+        let dayKey = item.day ? item.day.trim().replace("إ", "ا") : "";
+        let idx = getSlotIndex(item.slot);
+        
+        if (grid[dayKey] && idx !== -1) {
+          grid[dayKey][idx] = item;
+        }
+      }
+    });
+
+    let html = "";
+    days.forEach(day => {
+      html += `<tr><th style="font-weight: 900; color: #fff;">${day}</th>`;
+      
+      for (let i = 0; i < 4; i++) {
+        let lec = grid[day][i];
+        if (lec) {
+          let statusHTML = "";
+          let extraClass = "";
+
+          if (lec.status === "مؤكدة" || lec.status === "confirmed") {
+            statusHTML = `<div class="status-badge status-confirmed">✓ مؤكدة</div>`;
+            extraClass = "lec-confirmed";
+          } else if (lec.status === "ملغاة" || lec.status === "cancelled") {
+            statusHTML = `<div class="status-badge status-cancelled">✕ ملغاة</div>`;
+            extraClass = "lec-cancelled";
+          } else {
+            statusHTML = `<div class="status-badge status-pending">● غير محددة</div>`;
+          }
+
+          html += `
+            <td class="slot-cell has-lecture ${extraClass}">
+              ${statusHTML}
+              <div class="lec-name">${lec.name}</div>
+              <div class="lec-code">${lec.code}</div>
+              <div class="lec-room">📍 ${lec.room}</div>
+              <div class="lec-teacher">👨‍🏫 ${lec.teacher}</div>
+            </td>
+          `;
+        } else {
+          html += `<td class="slot-cell"></td>`;
+        }
+      }
+      html += `</tr>`;
+    });
+
+    document.getElementById('tableBody').innerHTML = html;
+  }, (error) => {
+    console.error("WatchLectures Error:", error);
+    document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" style="padding: 20px; color: #ff4d6d;">تعذر جلب الجدول.</td></tr>`;
+  });
 </script>
 </body>
 </html>
